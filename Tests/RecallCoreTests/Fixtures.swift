@@ -29,3 +29,40 @@ extension CardInfo {
                  interval: interval, due: due, fieldNames: fieldNames, fields: fields)
     }
 }
+
+/// In-memory Anki. `queries` maps exact findCards query strings to card ids.
+actor FakeAnki: AnkiService {
+    struct Answer: Equatable, Sendable {
+        let cardId: Int
+        let ease: Int
+    }
+
+    private var cards: [Int: CardInfo]
+    private let queries: [String: [Int]]
+    private let perDay: Int
+    private var failAnswers = false
+    private var intervalAfterAnswer: [Int: Int] = [:]
+    private(set) var answers: [Answer] = []
+
+    init(cards: [CardInfo], queries: [String: [Int]] = [:], perDay: Int = 20) {
+        self.cards = Dictionary(uniqueKeysWithValues: cards.map { ($0.cardId, $0) })
+        self.queries = queries
+        self.perDay = perDay
+    }
+
+    func setFailAnswers(_ fail: Bool) { failAnswers = fail }
+    func setIntervalAfterAnswer(_ cardId: Int, _ interval: Int) { intervalAfterAnswer[cardId] = interval }
+
+    func deckNames() async throws -> [String] { ["Default", "Inbox"] }
+    func findCards(_ query: String) async throws -> [Int] { queries[query] ?? [] }
+    func cardsInfo(_ cardIds: [Int]) async throws -> [CardInfo] { cardIds.compactMap { cards[$0] } }
+    func newCardsPerDay(deck: String) async throws -> Int { perDay }
+
+    func answerCard(_ cardId: Int, ease: Int) async throws {
+        if failAnswers { throw AnkiError.notRunning }
+        answers.append(Answer(cardId: cardId, ease: ease))
+        if let interval = intervalAfterAnswer[cardId], let info = cards[cardId] {
+            cards[cardId] = info.with(interval: interval)
+        }
+    }
+}
