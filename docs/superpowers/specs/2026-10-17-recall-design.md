@@ -137,12 +137,12 @@ Recall/
     RecallCoreTests/          // AnswerChecker, RomajiConverter, CardContent, Stage, QueueBuilder,
                               // ReviewSession (with a fake AnkiService)
   scripts/
-    build-app.sh              // swift build -c release → Recall.app bundle (Info.plist, icon)
+    build-app.sh              // release build → ~/Applications/Recall.app (Info.plist, icon)
 ```
 
 - `AnkiService` is a protocol so `QueueBuilder` and `ReviewSession` are tested against an in-memory fake, without Anki running.
 - AnkiConnect errors (`"error"` non-null) and connection failures surface as typed `AnkiError` values (`.notRunning`, `.api(String)`).
-- `build-app.sh` produces `~/Documents/Recall/build/Recall.app`; the user can drag it to /Applications.
+- `build-app.sh` builds outside `~/Documents` (its file provider adds attributes `codesign` rejects) and installs `~/Applications/Recall.app`.
 
 ## Testing
 
