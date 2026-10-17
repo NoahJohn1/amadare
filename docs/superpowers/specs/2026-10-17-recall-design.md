@@ -79,7 +79,11 @@ After each answer, Recall re-reads that card's `cardsInfo` to get the new interv
 
 ### Card content
 
-- **Prompt** = the note's first field; **answer** = the note's second field (field order from the note type). For Basic notes that's Front / Back.
+- **Japanese Vocab notes** (note type with fields Word, Meaning, Reading, Notes and card templates *Meaning* and *Reading*): the prompt is Word, and the card's template decides the question kind:
+  - **Meaning card** → answer is the Meaning field; light prompt band labeled "Meaning".
+  - **Reading card** → answer is the Reading field; dark prompt band labeled "Reading"; the answer box converts typed romaji to hiragana as you type (`nikki` → にっき, `nn` → ん, doubled consonant → っ). Text typed with a Japanese IME is left as is.
+  - After answering, the Notes field (if any) is shown under the answer.
+- **Any other note type**: **prompt** = the note's first field; **answer** = the note's second field (field order from the note type), with the light band and no label. For Basic notes that's Front / Back.
 - Field HTML is converted to plain text: `<br>` and block tags become line breaks, other tags are removed, HTML entities are decoded. Images and sound tags are dropped.
 - A card is **skipped** (not type-checkable) if, after conversion, its prompt or answer is empty, or the note type has fewer than two fields.
 
@@ -102,6 +106,8 @@ After each answer, Recall re-reads that card's `cardsInfo` to get the new interv
 
 Result type: `.exact`, `.nearMiss(expected: String)`, or `.wrong`.
 
+**Reading cards** are checked strictly, like WaniKani readings: both sides are normalized as above and katakana is folded to hiragana, then splitting (step 2) applies, but there is **no near-miss tolerance** — any difference is wrong. If the typed answer still contains Latin letters after romaji conversion (e.g. a trailing `n`), the box shakes and the answer is not submitted, so you can fix it.
+
 ## Architecture
 
 Swift package with a library target for everything testable and a thin app target:
@@ -115,6 +121,7 @@ Recall/
                               // getDeckConfig, answerCards. Protocol AnkiService + live impl.
       CardContent.swift       // HTML → plain text, prompt/answer extraction, skip rule
       AnswerChecker.swift     // normalization, accepted answers, Levenshtein, verdict
+      RomajiConverter.swift   // live romaji → hiragana for Reading cards
       Stage.swift             // interval → Stage
       QueueBuilder.swift      // builds the session queue from AnkiService
       ReviewSession.swift     // @Observable state machine: current card, submit, advance,
@@ -126,7 +133,7 @@ Recall/
       SummaryView.swift
       AnkiLauncher.swift      // open Anki via NSWorkspace, poll until connected
   Tests/
-    RecallCoreTests/          // AnswerChecker, CardContent, Stage, QueueBuilder,
+    RecallCoreTests/          // AnswerChecker, RomajiConverter, CardContent, Stage, QueueBuilder,
                               // ReviewSession (with a fake AnkiService)
   scripts/
     build-app.sh              // swift build -c release → Recall.app bundle (Info.plist, icon)
@@ -138,7 +145,7 @@ Recall/
 
 ## Testing
 
-- **Unit tests** (`swift test`): answer checking (exact, punctuation/case, splitting, parentheses, near-miss thresholds, Japanese/full-width), HTML conversion, stage boundaries, queue building (new-card limit, skipping), session behavior (re-queue spacing, wrap up, stats, failed-send retry).
+- **Unit tests** (`swift test`): answer checking (exact, punctuation/case, splitting, parentheses, near-miss thresholds, Japanese/full-width, strict readings with katakana folding), romaji conversion (っ, ん, small kana like `kya`), Japanese Vocab vs. other note types, HTML conversion, stage boundaries, queue building (new-card limit, skipping), session behavior (re-queue spacing, wrap up, stats, failed-send retry).
 - **Manual check** against the real Anki: dashboard counts match Anki's deck overview, a short session updates the cards in Anki (visible in Anki's Browse window), and the not-running screen appears when Anki is closed.
 
 ## Out of scope
