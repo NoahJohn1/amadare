@@ -1,7 +1,7 @@
 # Recall — WaniKani-style reviews for Anki decks
 
 **Date:** 2026-10-17
-**Status:** Approved design, pending spec review
+**Status:** Approved
 
 ## Goal
 
@@ -33,7 +33,7 @@ The dashboard refreshes when it appears and when the app becomes active.
 ### Review session
 
 - **Header**: back-to-dashboard button, progress (`answered / total`), and percent correct this session.
-- **Prompt band**: full-width colored band with the card's front in large type; long fronts shrink and wrap. Light and dark mode supported.
+- **Prompt band**: full-width purple band (the same for every card) with the card's front in large white type; long fronts shrink and wrap. Japanese Vocab cards get a strip under the band naming the question kind (see *Card content*). Light and dark mode supported.
 - **Answer box**: one text field below the band, focused automatically. macOS input methods (e.g. Japanese IME) work as normal.
 - **Return** with a non-empty answer checks it:
   - **Correct** → box turns green; if it was a near-miss, the box shakes and a "Close enough" note shows the expected answer.
@@ -79,11 +79,11 @@ After each answer, Recall re-reads that card's `cardsInfo` to get the new interv
 
 ### Card content
 
-- **Japanese Vocab notes** (note type with fields Word, Meaning, Reading, Notes and card templates *Meaning* and *Reading*): the prompt is Word, and the card's template decides the question kind:
-  - **Meaning card** → answer is the Meaning field; light prompt band labeled "Meaning".
-  - **Reading card** → answer is the Reading field; dark prompt band labeled "Reading"; the answer box converts typed romaji to hiragana as you type (`nikki` → にっき, `nn` → ん, doubled consonant → っ). Text typed with a Japanese IME is left as is.
+- **Japanese Vocab notes** (note type with fields Word, Meaning, Reading, Notes and card templates *Meaning* and *Reading*): the prompt is Word, and the card's template decides the question kind (AnkiConnect reports the template's position as `ord`: 0 = Meaning, 1 = Reading):
+  - **Meaning card** → answer is the Meaning field; light strip labeled "Meaning" under the prompt band.
+  - **Reading card** → answer is the Reading field; dark strip labeled "Reading" under the prompt band; the answer box converts typed romaji to hiragana as you type (`nikki` → にっき, `nn` → ん, doubled consonant → っ). Text typed with a Japanese IME is left as is.
   - After answering, the Notes field (if any) is shown under the answer.
-- **Any other note type**: **prompt** = the note's first field; **answer** = the note's second field (field order from the note type), with the light band and no label. For Basic notes that's Front / Back.
+- **Any other note type**: **prompt** = the note's first field; **answer** = the note's second field (field order from the note type), with no strip. For Basic notes that's Front / Back.
 - Field HTML is converted to plain text: `<br>` and block tags become line breaks, other tags are removed, HTML entities are decoded. Images and sound tags are dropped.
 - A card is **skipped** (not type-checkable) if, after conversion, its prompt or answer is empty, or the note type has fewer than two fields.
 
@@ -106,7 +106,7 @@ After each answer, Recall re-reads that card's `cardsInfo` to get the new interv
 
 Result type: `.exact`, `.nearMiss(expected: String)`, or `.wrong`.
 
-**Reading cards** are checked strictly, like WaniKani readings: both sides are normalized as above and katakana is folded to hiragana, then splitting (step 2) applies, but there is **no near-miss tolerance** — any difference is wrong. If the typed answer still contains Latin letters after romaji conversion (e.g. a trailing `n`), the box shakes and the answer is not submitted, so you can fix it.
+**Reading cards** are checked strictly, like WaniKani readings: both sides are normalized as above and katakana is folded to hiragana, then splitting (step 2) applies, but there is **no near-miss tolerance** — any difference is wrong. On Return, a trailing `n` or `nn` becomes ん; if Latin letters still remain after that, the box shakes and the answer is not submitted, so you can fix it.
 
 ## Architecture
 
@@ -132,6 +132,7 @@ Recall/
       ReviewView.swift
       SummaryView.swift
       AnkiLauncher.swift      // open Anki via NSWorkspace, poll until connected
+      Theme.swift             // WaniKani-style colors, stage bar, shake effect
   Tests/
     RecallCoreTests/          // AnswerChecker, RomajiConverter, CardContent, Stage, QueueBuilder,
                               // ReviewSession (with a fake AnkiService)
