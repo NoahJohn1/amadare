@@ -8,9 +8,6 @@ enum Theme {
     static let violet = Color(red: 0.63, green: 0.0, blue: 0.94)      // #A100F0, WaniKani vocabulary
     static let correct = Color(red: 0.53, green: 0.8, blue: 0.0)      // #88CC00
     static let wrong = Color(red: 1.0, green: 0.0, blue: 0.2)         // #FF0033
-
-    /// Hiragino Mincho: a brush-like serif for Japanese prompts and readings.
-    static func mincho(_ size: CGFloat) -> Font { .custom("HiraMinProN-W6", size: size) }
 }
 
 extension Stage {
@@ -32,7 +29,7 @@ struct KanjiBackdrop: View {
         Theme.ink
             .overlay {
                 Text(glyph)
-                    .font(Theme.mincho(560))
+                    .font(.system(size: 560, weight: .bold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.2)
                     .foregroundStyle(Theme.violet.opacity(0.75))

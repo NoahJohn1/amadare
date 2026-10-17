@@ -44,7 +44,7 @@ struct SummaryView: View {
             Text("\(title) (\(prompts.count))").font(.headline).foregroundStyle(color)
             ScrollView {
                 VStack(alignment: .leading, spacing: 6) {
-                    ForEach(Array(prompts.enumerated()), id: \.offset) { Text($0.element).font(Theme.mincho(22)) }
+                    ForEach(Array(prompts.enumerated()), id: \.offset) { Text($0.element).font(.title3) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

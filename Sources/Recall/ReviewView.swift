@@ -53,7 +53,7 @@ struct ReviewView: View {
 
     private func promptCard(_ card: ReviewCard) -> some View {
         Text(card.prompt)
-            .font(Theme.mincho(104))
+            .font(.system(size: 104))
             .minimumScaleFactor(0.3)
             .lineLimit(3)
             .multilineTextAlignment(.center)
@@ -76,7 +76,7 @@ struct ReviewView: View {
     private func answerField(_ card: ReviewCard) -> some View {
         TextField(placeholder(card.kind), text: $text)
             .textFieldStyle(.plain)
-            .font(card.kind == .reading ? Theme.mincho(30) : .system(size: 28))
+            .font(.system(size: 28))
             .multilineTextAlignment(.center)
             .foregroundStyle(.white)
             .focused($fieldFocused)
@@ -100,7 +100,7 @@ struct ReviewView: View {
                     Text("Close enough. The answer is “\(expected)”.").foregroundStyle(.secondary)
                 case .wrong:
                     Text(card.answer)
-                        .font(card.kind == .reading ? Theme.mincho(26) : .title2)
+                        .font(.title2)
                         .multilineTextAlignment(.center)
                 }
                 if !card.notes.isEmpty {

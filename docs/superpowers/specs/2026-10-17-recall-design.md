@@ -16,7 +16,7 @@ A native macOS app for reviewing Anki decks with a WaniKani-style interface: you
 | New cards | Reviews only — no separate Lessons. New cards appear in the review queue. |
 | Talking to Anki | Through the AnkiConnect add-on (`http://127.0.0.1:8765`, API version 6). Anki must be running. |
 | Platform | Native SwiftUI app, macOS 26+ (Liquid Glass), built with Swift Package Manager into `Recall.app`. |
-| Look | Liquid Glass on a dark ink backdrop showing a huge blurred copy of the current word; prompt, answer box, pills and stage tiles are glass. Japanese text in Hiragino Mincho. |
+| Look | Liquid Glass on a dark ink backdrop showing a huge blurred copy of the current word; prompt, answer box, pills and stage tiles are glass. Japanese text in the system font (Hiragino Sans). |
 
 ## Screens
 
