@@ -66,3 +66,8 @@ actor FakeAnki: AnkiService {
         }
     }
 }
+
+func rc(_ id: Int, _ prompt: String, _ answer: String, kind: QuestionKind = .plain,
+        stage: Stage = .apprentice) -> ReviewCard {
+    ReviewCard(id: id, prompt: prompt, answer: answer, notes: "", kind: kind, stage: stage)
+}
