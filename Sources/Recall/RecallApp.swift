@@ -29,9 +29,12 @@ struct RootView: View {
         switch model.screen {
         case .dashboard:
             DashboardView()
-        case .review:
-            // Replaced by ReviewView / SummaryView in Task 9.
-            Button("Back") { model.backToDashboard() }
+        case .review(let session):
+            if session.phase == .finished {
+                SummaryView(session: session)
+            } else {
+                ReviewView(session: session)
+            }
         }
     }
 }
