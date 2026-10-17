@@ -2,8 +2,8 @@
 /// Anything that isn't romaji (kana from a Japanese IME, spaces) passes through unchanged,
 /// so the whole field can be re-converted after every keystroke.
 public enum RomajiConverter {
-    /// - Parameter final: true when submitting: a trailing `n` or `nn` becomes ん.
-    ///   While typing, a trailing `n`/`nn` stays Latin because it may still become な, に, にゃ….
+    /// - Parameter final: true when submitting: a trailing `n` becomes ん.
+    ///   While typing, a trailing `n` stays Latin because it may still become な, に, にゃ….
     public static func convert(_ input: String, final: Bool = false) -> String {
         let chars = Array(input.lowercased())
         var out = ""
@@ -23,15 +23,9 @@ public enum RomajiConverter {
                     continue
                 }
                 if next == "n" {
-                    guard i + 2 < chars.count else {
-                        out += final ? "ん" : "nn"
-                        i += 2
-                        continue
-                    }
-                    let after = chars[i + 2]
-                    // "nni" → ん + に (keep the second n); "nnk" → ん + k.
+                    // "nn" → ん right away, like a Japanese IME; "nnni" → んに.
                     out += "ん"
-                    i += isVowel(after) || after == "y" ? 1 : 2
+                    i += 2
                     continue
                 }
                 if !isVowel(next) && next != "y" {

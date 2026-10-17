@@ -33,3 +33,51 @@ import Testing
     let anki = LiveAnki(url: URL(string: "http://127.0.0.1:9")!)
     await #expect(throws: AnkiError.notRunning) { _ = try await anki.deckNames() }
 }
+
+/// Serves queued AnkiConnect responses and records which actions were requested.
+final class StubURLProtocol: URLProtocol {
+    nonisolated(unsafe) static var responses: [String] = []
+    nonisolated(unsafe) static var actions: [String] = []
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func stopLoading() {}
+
+    override func startLoading() {
+        let body = request.httpBody ?? request.httpBodyStream.map(Self.readAll) ?? Data()
+        if let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+           let action = json["action"] as? String {
+            Self.actions.append(action)
+        }
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(Self.responses.removeFirst().utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    private static func readAll(_ stream: InputStream) -> Data {
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 4096)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count <= 0 { break }
+            data.append(buffer, count: count)
+        }
+        return data
+    }
+}
+
+@Test func answerLeavesAnkisReviewerAndRetries() async throws {
+    StubURLProtocol.actions = []
+    StubURLProtocol.responses = [
+        #"{"result":null,"error":"Use reviewer.answer for the active GUI card."}"#,
+        #"{"result":null,"error":null}"#,
+        #"{"result":[true],"error":null}"#,
+    ]
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [StubURLProtocol.self]
+    try await LiveAnki(session: URLSession(configuration: configuration)).answerCard(1, ease: 3)
+    #expect(StubURLProtocol.actions == ["answerCards", "guiDeckBrowser", "answerCards"])
+}

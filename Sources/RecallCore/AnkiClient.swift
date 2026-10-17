@@ -115,6 +115,17 @@ public struct LiveAnki: AnkiService {
     }
 
     public func answerCard(_ cardId: Int, ease: Int) async throws {
+        do {
+            try await sendAnswer(cardId, ease: ease)
+        } catch AnkiError.api(let message) where message.contains("active GUI card") {
+            // Anki's own review screen is showing this card, and AnkiConnect won't answer it
+            // until Anki leaves that screen. Switch Anki to its deck list and try once more.
+            let _: Bool? = try? await call("guiDeckBrowser")
+            try await sendAnswer(cardId, ease: ease)
+        }
+    }
+
+    private func sendAnswer(_ cardId: Int, ease: Int) async throws {
         let accepted: [Bool] = try await call("answerCards", ["answers": [["cardId": cardId, "ease": ease]]])
         if accepted.first != true { throw AnkiError.api("Anki didn't accept the answer for card \(cardId)") }
     }
