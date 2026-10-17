@@ -15,9 +15,11 @@ struct RecallApp: App {
         WindowGroup("Recall") {
             RootView()
                 .environment(model)
-                .frame(minWidth: 680, minHeight: 520)
+                .frame(minWidth: 720, minHeight: 600)
+                .preferredColorScheme(.dark)
                 .onAppear { NSApplication.shared.activate() }
         }
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
     }
 }
@@ -26,15 +28,26 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        switch model.screen {
-        case .dashboard:
-            DashboardView()
-        case .review(let session):
-            if session.phase == .finished {
-                SummaryView(session: session)
-            } else {
-                ReviewView(session: session)
+        ZStack {
+            KanjiBackdrop(glyph: backdropGlyph)
+            switch model.screen {
+            case .dashboard:
+                DashboardView()
+            case .review(let session):
+                if session.phase == .finished {
+                    SummaryView(session: session)
+                } else {
+                    ReviewView(session: session)
+                }
             }
         }
+    }
+
+    /// The current card's word during reviews; 記 ("record") everywhere else.
+    private var backdropGlyph: String {
+        if case .review(let session) = model.screen, let card = session.current {
+            return String(card.prompt.prefix(2))
+        }
+        return "記"
     }
 }

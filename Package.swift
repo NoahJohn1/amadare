@@ -1,9 +1,9 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
     name: "Recall",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v26)],
     products: [.executable(name: "Recall", targets: ["Recall"])],
     targets: [
         .target(name: "RecallCore"),

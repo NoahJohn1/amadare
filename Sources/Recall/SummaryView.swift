@@ -6,18 +6,21 @@ struct SummaryView: View {
     let session: ReviewSession
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 28) {
             Text("Session complete").font(.largeTitle.bold())
-            HStack(spacing: 48) {
-                stat("\(session.completedCount)", "Reviewed")
-                stat("\(session.percentCorrect)%", "Correct")
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
+                    stat("\(session.completedCount)", "Reviewed")
+                    stat("\(session.percentCorrect)%", "Correct")
+                }
             }
-            HStack(alignment: .top, spacing: 24) {
+            HStack(alignment: .top, spacing: 16) {
                 list("Correct", session.correctPrompts, Theme.correct)
                 list("Missed", session.missedPrompts, Theme.wrong)
             }
-            Button("Done") { model.backToDashboard() }
-                .buttonStyle(.borderedProminent)
+            Button("Back to dashboard") { model.backToDashboard() }
+                .buttonStyle(.glassProminent)
+                .tint(Theme.violet)
                 .controlSize(.large)
                 .keyboardShortcut(.defaultAction)
         }
@@ -26,22 +29,28 @@ struct SummaryView: View {
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
-        VStack {
-            Text(value).font(.system(size: 44, weight: .bold, design: .rounded))
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.system(size: 44, weight: .semibold, design: .rounded))
+                .monospacedDigit()
             Text(label).foregroundStyle(.secondary)
         }
+        .frame(width: 160, height: 110)
+        .glassEffect(in: .rect(cornerRadius: 24))
     }
 
     private func list(_ title: String, _ prompts: [String], _ color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("\(title) (\(prompts.count))").font(.headline).foregroundStyle(color)
             ScrollView {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(prompts.enumerated()), id: \.offset) { Text($0.element).font(.title3) }
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(Array(prompts.enumerated()), id: \.offset) { Text($0.element).font(Theme.mincho(22)) }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .frame(width: 240, height: 220)
+        .padding(20)
+        .frame(width: 260, height: 240)
+        .glassEffect(in: .rect(cornerRadius: 24))
     }
 }

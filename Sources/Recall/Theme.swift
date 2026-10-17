@@ -1,13 +1,16 @@
 import SwiftUI
 import RecallCore
 
-/// WaniKani-style colors and small shared views.
+/// Colors and type. Glass needs something behind it to refract, so every screen sits on
+/// `KanjiBackdrop`: deep ink with a huge blurred copy of the word being studied.
 enum Theme {
-    static let promptBand = Color(red: 0.63, green: 0.0, blue: 0.94)
-    static let correct = Color(red: 0.53, green: 0.8, blue: 0.0)
-    static let wrong = Color(red: 1.0, green: 0.0, blue: 0.2)
-    static let meaningStrip = Color(white: 0.9)
-    static let readingStrip = Color(white: 0.2)
+    static let ink = Color(red: 0.10, green: 0.06, blue: 0.20)        // #1A1033
+    static let violet = Color(red: 0.63, green: 0.0, blue: 0.94)      // #A100F0, WaniKani vocabulary
+    static let correct = Color(red: 0.53, green: 0.8, blue: 0.0)      // #88CC00
+    static let wrong = Color(red: 1.0, green: 0.0, blue: 0.2)         // #FF0033
+
+    /// Hiragino Mincho: a brush-like serif for Japanese prompts and readings.
+    static func mincho(_ size: CGFloat) -> Font { .custom("HiraMinProN-W6", size: size) }
 }
 
 extension Stage {
@@ -22,19 +25,46 @@ extension Stage {
     }
 }
 
+struct KanjiBackdrop: View {
+    let glyph: String
+
+    var body: some View {
+        Theme.ink
+            .overlay {
+                Text(glyph)
+                    .font(Theme.mincho(560))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.2)
+                    .foregroundStyle(Theme.violet.opacity(0.75))
+                    .blur(radius: 6)
+                    .padding(-40)
+                    .id(glyph)
+                    .transition(.opacity)
+            }
+            .animation(.easeInOut(duration: 0.5), value: glyph)
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
+    }
+}
+
+/// The five stages as glass tiles that merge into one strip.
 struct StageBar: View {
     let counts: [Stage: Int]
 
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(Stage.allCases, id: \.self) { stage in
-                VStack(spacing: 2) {
-                    Text("\(counts[stage, default: 0])").font(.title2.bold())
-                    Text(stage.name).font(.caption)
+        GlassEffectContainer(spacing: 6) {
+            HStack(spacing: 6) {
+                ForEach(Stage.allCases, id: \.self) { stage in
+                    VStack(spacing: 2) {
+                        Text("\(counts[stage, default: 0])")
+                            .font(.system(size: 26, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                        Text(stage.name).font(.callout)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(width: 112, height: 72)
+                    .glassEffect(.regular.tint(stage.color.opacity(0.7)), in: .rect(cornerRadius: 18))
                 }
-                .foregroundStyle(.white)
-                .frame(width: 104, height: 64)
-                .background(stage.color, in: RoundedRectangle(cornerRadius: 8))
             }
         }
     }

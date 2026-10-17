@@ -23,10 +23,13 @@ struct DashboardView: View {
             case .notRunning:
                 notRunningView
             case .failed(let message):
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     Text(message)
-                    Button("Retry") { Task { await load() } }
+                    Button("Try again") { Task { await load() } }
+                        .buttonStyle(.glass)
                 }
+                .padding(32)
+                .glassEffect(in: .rect(cornerRadius: 28))
             case .ready:
                 readyView
             }
@@ -40,24 +43,39 @@ struct DashboardView: View {
 
     private var readyView: some View {
         let count = snapshot?.cards.count ?? 0
-        return VStack(spacing: 28) {
-            Picker("Deck", selection: $selectedDeck) {
-                ForEach(decks, id: \.self) { Text($0).tag($0) }
+        return VStack(spacing: 32) {
+            Menu {
+                ForEach(decks, id: \.self) { deck in
+                    Button(deck) { selectedDeck = deck }
+                }
+            } label: {
+                Label(selectedDeck, systemImage: "rectangle.stack")
             }
-            .frame(maxWidth: 320)
+            .menuStyle(.button)
+            .buttonStyle(.glass)
+            .fixedSize()
 
-            VStack(spacing: 4) {
-                Text("\(count)").font(.system(size: 72, weight: .bold, design: .rounded))
-                Text(count == 1 ? "Review" : "Reviews").font(.title3).foregroundStyle(.secondary)
-            }
-
-            Button("Start Reviews") {
+            Button {
                 if let snapshot { model.startReviews(snapshot.cards) }
+            } label: {
+                VStack(spacing: 4) {
+                    Text("\(count)")
+                        .font(.system(size: 72, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                    Text(count == 1 ? "Start review" : "Start reviews").font(.title3)
+                }
+                .frame(width: 240, height: 170)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(.glassProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 40))
+            .tint(Theme.violet)
             .keyboardShortcut(.defaultAction)
             .disabled(count == 0)
+
+            if count == 0 {
+                Text("You're caught up. Cards come back here when Anki schedules them.")
+                    .foregroundStyle(.secondary)
+            }
 
             if let snapshot {
                 StageBar(counts: snapshot.stageCounts)
@@ -73,10 +91,10 @@ struct DashboardView: View {
 
     private var notRunningView: some View {
         VStack(spacing: 16) {
-            Image(systemName: "exclamationmark.triangle").font(.largeTitle).foregroundStyle(.orange)
             Text("Anki isn't open").font(.title2.bold())
-            Text("Recall reads your cards from Anki through the AnkiConnect add-on.")
+            Text("Recall reads your cards through AnkiConnect, so Anki needs to be running.")
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
             HStack {
                 Button(isLaunching ? "Opening Anki…" : "Open Anki") {
                     Task {
@@ -86,19 +104,24 @@ struct DashboardView: View {
                         await load()
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
+                .tint(Theme.violet)
                 .disabled(isLaunching)
-                Button("Retry") { Task { await load() } }
+                Button("Try again") { Task { await load() } }
+                    .buttonStyle(.glass)
                     .disabled(isLaunching)
             }
         }
+        .padding(36)
+        .frame(maxWidth: 440)
+        .glassEffect(in: .rect(cornerRadius: 28))
     }
 
     private func load() async {
         do {
             decks = try await model.anki.deckNames().sorted()
             guard !decks.isEmpty else {
-                state = .failed("Anki has no decks yet.")
+                state = .failed("Anki has no decks yet. Add a deck in Anki, then try again.")
                 return
             }
             if !decks.contains(selectedDeck) {
