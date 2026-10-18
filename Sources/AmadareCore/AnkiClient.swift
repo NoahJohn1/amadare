@@ -140,13 +140,21 @@ public struct LiveAnki: AnkiService {
         try await callIgnoringResult("updateNoteFields", ["note": ["id": noteId, "fields": fields]])
     }
 
-    /// Makes sure the Japanese Vocab note type (if it exists) has a Mnemonic field and that its
-    /// card backs in Anki show it. Safe to call repeatedly.
-    public func prepareMnemonicFields() async throws {
-        let model = CardContent.japaneseVocabModel
+    /// Makes sure Anki has the `Japanese Vocab` note type: creates it if missing; otherwise adds the
+    /// Mnemonic field and shows it on the card backs if an older version lacks them. Safe to call repeatedly.
+    public func prepareNoteType() async throws {
+        let model = JapaneseVocabNoteType.name
         let field = CardContent.mnemonicField
         let models: [String] = try await call("modelNames")
-        guard models.contains(model) else { return }
+        guard models.contains(model) else {
+            try await callIgnoringResult("createModel", [
+                "modelName": model,
+                "inOrderFields": JapaneseVocabNoteType.fields,
+                "css": JapaneseVocabNoteType.css,
+                "cardTemplates": JapaneseVocabNoteType.templates.map { ["Name": $0.name, "Front": $0.front, "Back": $0.back] },
+            ])
+            return
+        }
         let fields: [String] = try await call("modelFieldNames", ["modelName": model])
         if !fields.contains(field) {
             try await callIgnoringResult("modelFieldAdd", ["modelName": model, "fieldName": field])

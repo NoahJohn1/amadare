@@ -11,14 +11,14 @@ final class AppModel {
 
     var screen: Screen = .dashboard
     let anki = LiveAnki()
-    private var preparedMnemonics = false
+    private var preparedNoteType = false
 
-    /// Makes sure the Japanese Vocab note type has mnemonic fields. Runs once per launch.
+    /// Makes sure Anki has the Japanese Vocab note type, with its Mnemonic field. Runs once per launch.
     func prepareAnki() async {
-        guard !preparedMnemonics else { return }
+        guard !preparedNoteType else { return }
         do {
-            try await anki.prepareMnemonicFields()
-            preparedMnemonics = true
+            try await anki.prepareNoteType()
+            preparedNoteType = true
         } catch {
             // Anki may not be running yet; the dashboard tries again on its next load.
         }

@@ -38,6 +38,7 @@ import Testing
 final class StubURLProtocol: URLProtocol {
     nonisolated(unsafe) static var responses: [String] = []
     nonisolated(unsafe) static var actions: [String] = []
+    nonisolated(unsafe) static var params: [[String: Any]] = []
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -48,6 +49,7 @@ final class StubURLProtocol: URLProtocol {
         if let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
            let action = json["action"] as? String {
             Self.actions.append(action)
+            Self.params.append(json["params"] as? [String: Any] ?? [:])
         }
         let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -93,5 +95,40 @@ struct StubbedAnkiTests {
         try await LiveAnki(session: URLSession(configuration: configuration))
             .updateNoteFields(9, fields: ["Meaning Mnemonic": "sun + words"])
         #expect(StubURLProtocol.actions == ["updateNoteFields"])
+    }
+
+    @Test func createsTheJapaneseVocabNoteTypeWhenMissing() async throws {
+        StubURLProtocol.actions = []
+        StubURLProtocol.params = []
+        StubURLProtocol.responses = [
+            #"{"result":["Basic","Cloze"],"error":null}"#,
+            #"{"result":{"id":1},"error":null}"#,
+        ]
+        try await stubbedAnki().prepareNoteType()
+        #expect(StubURLProtocol.actions == ["modelNames", "createModel"])
+        let created = StubURLProtocol.params[1]
+        #expect(created["modelName"] as? String == "Japanese Vocab")
+        #expect(created["inOrderFields"] as? [String] == ["Word", "Meaning", "Reading", "Mnemonic", "Notes", "Furigana"])
+        let templates = created["cardTemplates"] as? [[String: String]] ?? []
+        #expect(templates.map { $0["Name"] } == ["Meaning", "Reading"])   // order matters: ord 0 = Meaning
+        #expect(templates.allSatisfy { $0["Back"]?.contains("{{Mnemonic}}") == true })
+    }
+
+    @Test func leavesACompleteNoteTypeAlone() async throws {
+        StubURLProtocol.actions = []
+        StubURLProtocol.params = []
+        StubURLProtocol.responses = [
+            #"{"result":["Basic","Japanese Vocab"],"error":null}"#,
+            #"{"result":["Word","Meaning","Reading","Mnemonic","Notes","Furigana"],"error":null}"#,
+            #"{"result":{"Meaning":{"Front":"f","Back":"{{Mnemonic}}"},"Reading":{"Front":"f","Back":"{{Mnemonic}}"}},"error":null}"#,
+        ]
+        try await stubbedAnki().prepareNoteType()
+        #expect(StubURLProtocol.actions == ["modelNames", "modelFieldNames", "modelTemplates"])
+    }
+
+    private func stubbedAnki() -> LiveAnki {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StubURLProtocol.self]
+        return LiveAnki(session: URLSession(configuration: configuration))
     }
 }
