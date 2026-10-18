@@ -32,6 +32,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
+            FullScreenWallpaper()
             KanjiBackdrop(glyph: backdropGlyph)
             RainGlass()
             switch model.screen {
