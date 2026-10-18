@@ -15,8 +15,8 @@ struct SummaryView: View {
                 }
             }
             HStack(alignment: .top, spacing: 16) {
-                list("Correct", session.correctPrompts, Theme.correct)
-                list("Missed", session.missedPrompts, Theme.wrong)
+                list("Correct", session.correctPrompts, Theme.correctText)
+                list("Missed", session.missedPrompts, Theme.wrongText)
             }
             Button("Back to dashboard") { model.backToDashboard() }
                 .buttonStyle(.glassProminent)

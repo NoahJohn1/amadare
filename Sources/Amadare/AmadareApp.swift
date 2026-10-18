@@ -17,8 +17,9 @@ struct AmadareApp: App {
                 .environment(model)
                 .frame(minWidth: 720, minHeight: 600)
                 .preferredColorScheme(.dark)
-                // The window itself is frosted: a heavy blur of whatever is behind it.
-                .containerBackground(.ultraThickMaterial, for: .window)
+                // The window itself is frosted: a blur of whatever is behind it, showing through
+                // the gaps in the clouds.
+                .containerBackground(.thinMaterial, for: .window)
                 .onAppear { NSApplication.shared.activate() }
         }
         .windowStyle(.hiddenTitleBar)

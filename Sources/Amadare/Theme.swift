@@ -8,8 +8,13 @@ enum Theme {
     static let ink = Color(red: 0.04, green: 0.09, blue: 0.13)        // #0B1622, night-rain navy
     static let ai = Color(red: 0.18, green: 0.44, blue: 0.65)         // #2E70A6, 藍 indigo: prompt and mark
     static let mizu = Color(red: 0.37, green: 0.66, blue: 0.88)       // #5FA8E0, 水 water: main buttons
-    static let correct = Color(red: 0.53, green: 0.8, blue: 0.0)      // #88CC00
-    static let wrong = Color(red: 1.0, green: 0.0, blue: 0.2)         // #FF0033
+    /// Answer fills, dim enough for white text on top.
+    static let correct = Color(red: 0.37, green: 0.55, blue: 0.0)     // #5E8C00
+    static let wrong = Color(red: 0.77, green: 0.0, blue: 0.16)       // #C4002A
+    /// The same colors as text on the dark background, where they need to be brighter.
+    static let correctText = Color(red: 0.53, green: 0.8, blue: 0.0)  // #88CC00
+    static let wrongText = Color(red: 1.0, green: 0.27, blue: 0.4)    // #FF4566
+    static let cloud = Color(red: 0.05, green: 0.07, blue: 0.10)      // storm-cloud grey-navy
 
     /// Amadare (雨垂れ) is rain dripping from the eaves; its mark is 雫, a single drop.
     static let brandGlyph = "雫"
@@ -33,7 +38,10 @@ struct KanjiBackdrop: View {
     let glyph: String
 
     var body: some View {
-        Theme.ink.opacity(0.45)
+        ZStack {
+            Theme.ink.opacity(0.25)
+            CloudCover()
+        }
             .overlay {
                 // Brush-like Mincho, kept dim so it sets a mood without competing with the UI.
                 Text(glyph)

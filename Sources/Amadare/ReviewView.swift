@@ -11,7 +11,8 @@ struct ReviewView: View {
     @State private var submitted = ""
     @State private var shakes: CGFloat = 0
     @FocusState private var fieldFocused: Bool
-    @AppStorage("showMeaningFurigana") private var showMeaningFurigana = false
+    /// Furigana before answering, on Meaning cards only. Starts hidden on every card.
+    @State private var showMeaningFurigana = false
 
     @State private var editingMnemonic = false
     @State private var mnemonicDraft = ""
@@ -35,6 +36,7 @@ struct ReviewView: View {
         .padding(.bottom, 24)
         .onAppear { fieldFocused = true }
         .onChange(of: session.current?.id) {
+            showMeaningFurigana = false
             editingMnemonic = false
             mnemonicError = nil
         }
@@ -92,7 +94,7 @@ struct ReviewView: View {
                 }
                 .buttonStyle(.glass)
                 .keyboardShortcut("f")
-                .help("Show or hide the reading above the kanji (⌘F)")
+                .help("Show or hide the reading above the kanji for this card (⌘F)")
             }
         }
     }
