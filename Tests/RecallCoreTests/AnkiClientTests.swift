@@ -69,15 +69,29 @@ final class StubURLProtocol: URLProtocol {
     }
 }
 
-@Test func answerLeavesAnkisReviewerAndRetries() async throws {
-    StubURLProtocol.actions = []
-    StubURLProtocol.responses = [
-        #"{"result":null,"error":"Use reviewer.answer for the active GUI card."}"#,
-        #"{"result":null,"error":null}"#,
-        #"{"result":[true],"error":null}"#,
-    ]
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [StubURLProtocol.self]
-    try await LiveAnki(session: URLSession(configuration: configuration)).answerCard(1, ease: 3)
-    #expect(StubURLProtocol.actions == ["answerCards", "guiDeckBrowser", "answerCards"])
+/// These share StubURLProtocol's static queue, so they must not run in parallel.
+@Suite(.serialized)
+struct StubbedAnkiTests {
+    @Test func answerLeavesAnkisReviewerAndRetries() async throws {
+        StubURLProtocol.actions = []
+        StubURLProtocol.responses = [
+            #"{"result":null,"error":"Use reviewer.answer for the active GUI card."}"#,
+            #"{"result":null,"error":null}"#,
+            #"{"result":[true],"error":null}"#,
+        ]
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StubURLProtocol.self]
+        try await LiveAnki(session: URLSession(configuration: configuration)).answerCard(1, ease: 3)
+        #expect(StubURLProtocol.actions == ["answerCards", "guiDeckBrowser", "answerCards"])
+    }
+
+    @Test func updateNoteFieldsAcceptsANullResult() async throws {
+        StubURLProtocol.actions = []
+        StubURLProtocol.responses = [#"{"result":null,"error":null}"#]
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [StubURLProtocol.self]
+        try await LiveAnki(session: URLSession(configuration: configuration))
+            .updateNoteFields(9, fields: ["Meaning Mnemonic": "sun + words"])
+        #expect(StubURLProtocol.actions == ["updateNoteFields"])
+    }
 }

@@ -5,6 +5,8 @@ public enum Verdict: Sendable, Equatable {
     /// Correct with a small typo; `expected` is the accepted answer it was close to.
     case nearMiss(expected: String)
     case wrong
+    /// Checked as wrong, then the user said it was right.
+    case markedCorrect
 
     public var isCorrect: Bool { self != .wrong }
 }

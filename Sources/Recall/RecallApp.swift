@@ -17,6 +17,8 @@ struct RecallApp: App {
                 .environment(model)
                 .frame(minWidth: 720, minHeight: 600)
                 .preferredColorScheme(.dark)
+                // The window itself is frosted: a heavy blur of whatever is behind it.
+                .containerBackground(.ultraThickMaterial, for: .window)
                 .onAppear { NSApplication.shared.activate() }
         }
         .windowStyle(.hiddenTitleBar)

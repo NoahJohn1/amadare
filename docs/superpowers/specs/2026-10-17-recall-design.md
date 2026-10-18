@@ -150,6 +150,16 @@ Recall/
 - **Unit tests** (`swift test`): answer checking (exact, punctuation/case, splitting, parentheses, near-miss thresholds, Japanese/full-width, strict readings with katakana folding), romaji conversion (っ, ん, small kana like `kya`), Japanese Vocab vs. other note types, HTML conversion, stage boundaries, queue building (new-card limit, skipping), session behavior (re-queue spacing, wrap up, stats, failed-send retry).
 - **Manual check** against the real Anki: dashboard counts match Anki's deck overview, a short session updates the cards in Anki (visible in Anki's Browse window), and the not-running screen appears when Anki is closed.
 
+## Added 2026-10-18
+
+- **Wrong answers wait to be sent.** After a wrong answer, two buttons appear: **Retry** (⌘R) puts the card back in the queue without telling Anki, and **Mark correct** (⌘Return) counts it as right and sends Good. Return moves on and sends Again. Correct answers are still sent right away.
+- **Furigana.** After answering, the Japanese Vocab word shows its reading in small type above the kanji, lined up so okurigana isn't covered (行(い)きました). On Meaning cards a **Show/Hide furigana** button (⌘F, remembered) shows it before answering too. Reading cards never show it before answering.
+- **Mnemonics.** After answering, **Add/Edit mnemonic** (⌘E) edits the note's `Mnemonic` field (one per word, shared by its Meaning and Reading cards, and the same field the Add to Anki popup uses). Recall adds the field to Japanese Vocab at launch if missing; other note types get mnemonics only if they have a `Mnemonic` field.
+- **Copyable question.** The prompt text is selectable, and right-click offers Copy.
+- **Frosted window.** The window background is a heavy blur of whatever is behind it, tinted with ink.
+
+The "I was actually right" override listed below is now built (Mark correct).
+
 ## Out of scope
 
 Lessons, audio, editing cards, statistics beyond the stage bar and session summary, an "I was actually right" override (may be added later if near-miss checking misjudges too often), syncing (Anki handles that), multiple decks per session.

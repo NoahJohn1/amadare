@@ -43,6 +43,12 @@ actor FakeAnki: AnkiService {
     private var failAnswers = false
     private var intervalAfterAnswer: [Int: Int] = [:]
     private(set) var answers: [Answer] = []
+    private(set) var fieldUpdates: [FieldUpdate] = []
+
+    struct FieldUpdate: Equatable, Sendable {
+        let noteId: Int
+        let fields: [String: String]
+    }
 
     init(cards: [CardInfo], queries: [String: [Int]] = [:], perDay: Int = 20) {
         self.cards = Dictionary(uniqueKeysWithValues: cards.map { ($0.cardId, $0) })
@@ -57,6 +63,10 @@ actor FakeAnki: AnkiService {
     func findCards(_ query: String) async throws -> [Int] { queries[query] ?? [] }
     func cardsInfo(_ cardIds: [Int]) async throws -> [CardInfo] { cardIds.compactMap { cards[$0] } }
     func newCardsPerDay(deck: String) async throws -> Int { perDay }
+
+    func updateNoteFields(_ noteId: Int, fields: [String: String]) async throws {
+        fieldUpdates.append(FieldUpdate(noteId: noteId, fields: fields))
+    }
 
     func answerCard(_ cardId: Int, ease: Int) async throws {
         if failAnswers { throw AnkiError.notRunning }

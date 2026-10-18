@@ -1,8 +1,8 @@
 import SwiftUI
 import RecallCore
 
-/// Colors and type. Glass needs something behind it to refract, so every screen sits on
-/// `KanjiBackdrop`: deep ink with a huge blurred copy of the word being studied.
+/// Colors. Glass needs something behind it to refract, so every screen sits on `KanjiBackdrop`:
+/// the frosted window, tinted with ink, under a huge blurred copy of the word being studied.
 enum Theme {
     static let ink = Color(red: 0.10, green: 0.06, blue: 0.20)        // #1A1033
     static let violet = Color(red: 0.63, green: 0.0, blue: 0.94)      // #A100F0, WaniKani vocabulary
@@ -26,7 +26,7 @@ struct KanjiBackdrop: View {
     let glyph: String
 
     var body: some View {
-        Theme.ink
+        Theme.ink.opacity(0.45)
             .overlay {
                 Text(glyph)
                     .font(.system(size: 560, weight: .bold))

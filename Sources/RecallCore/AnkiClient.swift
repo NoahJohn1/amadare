@@ -74,11 +74,17 @@ public protocol AnkiService: Sendable {
     func cardsInfo(_ cardIds: [Int]) async throws -> [CardInfo]
     func newCardsPerDay(deck: String) async throws -> Int
     func answerCard(_ cardId: Int, ease: Int) async throws
+    func updateNoteFields(_ noteId: Int, fields: [String: String]) async throws
 }
 
 struct AnkiEnvelope<T: Decodable>: Decodable {
     let result: T?
     let error: String?
+}
+
+/// For actions whose result Recall doesn't need (often null).
+struct IgnoredResult: Decodable {
+    init(from decoder: Decoder) throws {}
 }
 
 public struct LiveAnki: AnkiService {
@@ -120,7 +126,7 @@ public struct LiveAnki: AnkiService {
         } catch AnkiError.api(let message) where message.contains("active GUI card") {
             // Anki's own review screen is showing this card, and AnkiConnect won't answer it
             // until Anki leaves that screen. Switch Anki to its deck list and try once more.
-            let _: Bool? = try? await call("guiDeckBrowser")
+            try? await callIgnoringResult("guiDeckBrowser")
             try await sendAnswer(cardId, ease: ease)
         }
     }
@@ -130,18 +136,60 @@ public struct LiveAnki: AnkiService {
         if accepted.first != true { throw AnkiError.api("Anki didn't accept the answer for card \(cardId)") }
     }
 
+    public func updateNoteFields(_ noteId: Int, fields: [String: String]) async throws {
+        try await callIgnoringResult("updateNoteFields", ["note": ["id": noteId, "fields": fields]])
+    }
+
+    /// Makes sure the Japanese Vocab note type (if it exists) has a Mnemonic field and that its
+    /// card backs in Anki show it. Safe to call repeatedly.
+    public func prepareMnemonicFields() async throws {
+        let model = CardContent.japaneseVocabModel
+        let field = CardContent.mnemonicField
+        let models: [String] = try await call("modelNames")
+        guard models.contains(model) else { return }
+        let fields: [String] = try await call("modelFieldNames", ["modelName": model])
+        if !fields.contains(field) {
+            try await callIgnoringResult("modelFieldAdd", ["modelName": model, "fieldName": field])
+        }
+        let templates: [String: [String: String]] = try await call("modelTemplates", ["modelName": model])
+        var updates: [String: [String: String]] = [:]
+        for (name, var sides) in templates {
+            guard let back = sides["Back"], !back.contains("{{\(field)}}") else { continue }
+            sides["Back"] = back + "{{#\(field)}}<div class=mnemonic>{{\(field)}}</div>{{/\(field)}}"
+            updates[name] = sides
+        }
+        if !updates.isEmpty {
+            try await callIgnoringResult("updateModelTemplates", ["model": ["name": model, "templates": updates]])
+        }
+    }
+
+    /// For actions whose result is null or unused: only AnkiConnect's `error` matters.
+    func callIgnoringResult(_ action: String, _ params: [String: Any] = [:]) async throws {
+        let envelope: AnkiEnvelope<IgnoredResult>
+        do {
+            envelope = try JSONDecoder().decode(AnkiEnvelope<IgnoredResult>.self, from: try await send(action, params))
+        } catch let error as AnkiError {
+            throw error
+        } catch {
+            throw AnkiError.badResponse
+        }
+        if let error = envelope.error { throw AnkiError.api(error) }
+    }
+
     func call<T: Decodable>(_ action: String, _ params: [String: Any] = [:]) async throws -> T {
+        try Self.decodeResult(try await send(action, params))
+    }
+
+    private func send(_ action: String, _ params: [String: Any]) async throws -> Data {
         var request = URLRequest(url: url, timeoutInterval: 10)
         request.httpMethod = "POST"
         request.httpBody = try JSONSerialization.data(
             withJSONObject: ["action": action, "version": 6, "params": params])
-        let data: Data
         do {
-            (data, _) = try await session.data(for: request)
+            return try await session.data(for: request).0
         } catch is URLError {
             throw AnkiError.notRunning
         }
-        return try Self.decodeResult(data)
     }
 
     static func decodeResult<T: Decodable>(_ data: Data) throws -> T {

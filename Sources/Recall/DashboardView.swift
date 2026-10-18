@@ -129,6 +129,7 @@ struct DashboardView: View {
                 selectedDeck = decks.first { $0 != "Default" } ?? decks[0]
                 return
             }
+            await model.prepareAnki()
             snapshot = try await QueueBuilder(anki: model.anki).snapshot(deck: selectedDeck)
             state = .ready
         } catch AnkiError.notRunning {

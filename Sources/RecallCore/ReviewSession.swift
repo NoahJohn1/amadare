@@ -35,7 +35,14 @@ public final class ReviewSession {
 
     private let anki: any AnkiService
     private let requeueOffset: () -> Int
+    /// Saved mnemonics, keyed by note id and field, newer than the cards' own copies.
+    public private(set) var savedMnemonics: [String: String] = [:]
+
     @ObservationIgnored private var missedIds: Set<Int> = []
+    /// Cards put back into the queue (missed or retried); wrap up keeps them.
+    @ObservationIgnored private var requeuedIds: Set<Int> = []
+    /// Whether the current wrong answer is the card's first miss this session (so it can be undone).
+    @ObservationIgnored private var firstMissPending = false
     @ObservationIgnored private var stages: [Int: Stage]
     @ObservationIgnored private var pendingSend: (cardId: Int, ease: Int)?
 
@@ -58,7 +65,8 @@ public final class ReviewSession {
         return answered == 0 ? 100 : Int((Double(correctAnswers) / Double(answered) * 100).rounded())
     }
 
-    /// Checks the answer, shows the verdict, and sends it to Anki. Empty answers are ignored.
+    /// Checks the answer and shows the verdict. Correct answers go to Anki right away; wrong ones
+    /// wait until the user moves on, so Retry or Mark correct can still change them. Empty answers are ignored.
     public func submit(_ typed: String) async {
         guard phase == .answering, let card = current,
               !typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -66,38 +74,92 @@ public final class ReviewSession {
         phase = .answered(verdict)
         if verdict.isCorrect {
             correctAnswers += 1
+            pendingSend = (card.id, 3)
+            await send()
         } else {
             wrongAnswers += 1
-            if missedIds.insert(card.id).inserted { missedPrompts.append(card.prompt) }
+            firstMissPending = missedIds.insert(card.id).inserted
+            if firstMissPending { missedPrompts.append(card.prompt) }
+            pendingSend = (card.id, 1)
         }
-        pendingSend = (card.id, verdict.isCorrect ? 3 : 1)
-        await send()
     }
 
     public func retrySend() async {
         await send()
     }
 
-    /// Moves to the next card. Does nothing until the current answer has reached Anki.
-    public func advance() {
-        guard case .answered(let verdict) = phase, sendError == nil, pendingSend == nil, !queue.isEmpty else { return }
+    /// Wrong answer only: puts the card back in the queue without telling Anki, as if it hadn't been answered.
+    public func retry() {
+        guard phase == .answered(.wrong), !queue.isEmpty else { return }
+        undoWrongAnswer()
+        pendingSend = nil
+        let card = queue.removeFirst()
+        queue.insert(card, at: min(requeueOffset(), queue.count))
+        requeuedIds.insert(card.id)
+        stageChange = nil
+        phase = .answering
+    }
+
+    /// Wrong answer only: the user says it was right. Sent to Anki as Good.
+    public func markCorrect() async {
+        guard phase == .answered(.wrong), let card = current else { return }
+        undoWrongAnswer()
+        correctAnswers += 1
+        phase = .answered(.markedCorrect)
+        pendingSend = (card.id, 3)
+        await send()
+    }
+
+    /// Moves to the next card, first sending the answer to Anki if it hasn't gone yet.
+    /// Stays on the card if sending fails.
+    public func advance() async {
+        guard case .answered(let verdict) = phase, !queue.isEmpty else { return }
+        if pendingSend != nil {
+            await send()
+            guard pendingSend == nil else { return }
+        }
         let card = queue.removeFirst()
         if verdict.isCorrect {
             completedCount += 1
             if !missedIds.contains(card.id) { correctPrompts.append(card.prompt) }
         } else {
             queue.insert(card, at: min(requeueOffset(), queue.count))
+            requeuedIds.insert(card.id)
         }
-        if isWrappingUp { queue.removeAll { !missedIds.contains($0.id) } }
+        if isWrappingUp { queue.removeAll { !requeuedIds.contains($0.id) } }
         stageChange = nil
         phase = queue.isEmpty ? .finished : .answering
     }
 
-    /// Stops pulling new cards: keeps the card on screen and cards already missed.
+    /// Stops pulling new cards: keeps the card on screen and cards already put back in the queue.
     public func wrapUp() {
         isWrappingUp = true
         guard let first = queue.first else { return }
-        queue = [first] + queue.dropFirst().filter { missedIds.contains($0.id) }
+        queue = [first] + queue.dropFirst().filter { requeuedIds.contains($0.id) }
+    }
+
+    public func mnemonic(for card: ReviewCard) -> String {
+        guard let field = card.mnemonicField else { return "" }
+        return savedMnemonics[Self.mnemonicKey(card.noteId, field)] ?? card.mnemonic
+    }
+
+    /// Saves the card's mnemonic to its note in Anki.
+    public func saveMnemonic(_ text: String, for card: ReviewCard) async throws {
+        guard let field = card.mnemonicField else { return }
+        try await anki.updateNoteFields(card.noteId, fields: [field: CardContent.html(fromPlainText: text)])
+        savedMnemonics[Self.mnemonicKey(card.noteId, field)] = text
+    }
+
+    private static func mnemonicKey(_ noteId: Int, _ field: String) -> String { "\(noteId)|\(field)" }
+
+    private func undoWrongAnswer() {
+        guard let card = current else { return }
+        wrongAnswers -= 1
+        if firstMissPending {
+            missedIds.remove(card.id)
+            if missedPrompts.last == card.prompt { missedPrompts.removeLast() }
+            firstMissPending = false
+        }
     }
 
     private func send() async {
