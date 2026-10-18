@@ -1,0 +1,321 @@
+<!doctype html>
+<!-- Source: Ankani repo, QuickActions/. Edit it there and run scripts/install-quick-actions.sh; installed copies get overwritten. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f6f7; --pane: #ffffff; --text: #1d1d1f; --muted: #6e6e73; --line: #e2e2e6;
+    --accent: #0a64d6; --sel: #0a64d6; --sel-text: #fff; --mark: #ffe58a; --field: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e20; --pane: #262628; --text: #f2f2f4; --muted: #9a9aa0; --line: #3a3a3e;
+      --accent: #5aa2ff; --sel: #2f6fd0; --sel-text: #fff; --mark: #6b5a12; --field: #1a1a1c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font: 13px -apple-system, "Hiragino Sans", sans-serif; overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+  header { padding: 10px; border-bottom: 1px solid var(--line); }
+  #q { width: 100%; font-size: 17px; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--line);
+    background: var(--field); color: var(--text); outline: none; }
+  #q:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  main { flex: 1; display: flex; min-height: 0; }
+  #list { width: 42%; overflow-y: auto; border-right: 1px solid var(--line); margin: 0; padding: 4px; list-style: none; }
+  #list li { padding: 6px 8px; border-radius: 6px; cursor: default; }
+  #list li .t { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #list li .s { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #list li.sel { background: var(--sel); color: var(--sel-text); }
+  #list li.sel .s { color: color-mix(in srgb, var(--sel-text) 80%, transparent); }
+  mark { background: var(--mark); color: inherit; border-radius: 2px; }
+  li.sel mark { background: color-mix(in srgb, var(--sel-text) 30%, transparent); }
+  #detail { flex: 1; overflow-y: auto; padding: 16px 20px; background: var(--pane); }
+  #detail h1 { font-size: 34px; font-weight: 600; margin: 0 0 12px; word-break: break-word; }
+  #detail h1 rt { font-size: 14px; font-weight: 400; color: var(--muted); }
+  .field { margin-bottom: 12px; }
+  .field .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 2px; }
+  .field .v { font-size: 15px; line-height: 1.45; word-break: break-word; }
+  .field .v img { max-width: 100%; }
+  .meta { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); line-height: 1.7; }
+  .tag { display: inline-block; padding: 0 6px; border-radius: 4px; border: 1px solid var(--line); margin-right: 4px; }
+  button { margin-top: 10px; font: inherit; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--line);
+    background: var(--field); color: var(--text); }
+  .actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .actions button { margin-top: 0; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .msg { color: var(--muted); }
+  .msg.err { color: #e5484d; }
+  .edit .k .hint { text-transform: none; letter-spacing: 0; opacity: .8; }
+  .edit textarea { width: 100%; resize: none; overflow: hidden; font: 15px/1.45 -apple-system, "Hiragino Sans", sans-serif;
+    padding: 5px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--field); color: var(--text); outline: none; }
+  .edit textarea.raw { font: 12px/1.45 ui-monospace, Menlo, monospace; }
+  .edit textarea:focus { border-color: var(--accent); }
+  body.editing #q, body.editing #list { opacity: .45; pointer-events: none; }
+  .empty { color: var(--muted); padding: 14px; line-height: 1.5; }
+  footer { padding: 4px 10px; color: var(--muted); font-size: 11px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header><input id="q" placeholder="Search your Anki cards — Japanese or English" autocomplete="off" spellcheck="false"></header>
+<main>
+  <ul id="list"></ul>
+  <section id="detail"></section>
+</main>
+<footer id="status">↑↓ to move · ⌘E edits · ⌘O opens in Anki · Esc closes</footer>
+<script>
+__FURIGANA_JS__
+</script>
+<script>
+const INITIAL = __INITIAL__;
+const MAX = 1000;
+const $q = document.getElementById('q'), $list = document.getElementById('list'),
+      $detail = document.getElementById('detail'), $status = document.getElementById('status');
+let results = [], sel = -1, seq = 0;
+
+async function anki(action, params) {
+  const r = await fetch('http://127.0.0.1:8765', { method: 'POST', body: JSON.stringify({ action, version: 6, params: params || {} }) });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  return j.result;
+}
+
+const plain = html => {
+  const d = document.createElement('div');
+  d.innerHTML = String(html).replace(/<br\s*\/?>|<\/(div|p|li)>/gi, ' ').replace(/\[sound:[^\]]*\]/g, '');
+  return d.textContent.replace(/\s+/g, ' ').trim();
+};
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const highlight = (text, q) => {
+  if (!q) return esc(text);
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  return i < 0 ? esc(text) : esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+};
+// One quoted Anki search term matching the text anywhere in any field.
+const ankiTerm = s => '"' + s.replace(/[\\"*_:()-]/g, c => '\\' + c) + '"';
+
+function fieldsInOrder(note) {
+  return Object.entries(note.fields).sort((a, b) => a[1].order - b[1].order).map(([k, v]) => [k, v.value]);
+}
+
+async function search() {
+  const q = $q.value.trim(), my = ++seq;
+  try {
+    // An empty search lists every note, newest first (note ids are creation times).
+    const found = await anki('findNotes', { query: q ? ankiTerm(q) : 'deck:*' });
+    const ids = (q ? found : found.sort((a, b) => b - a)).slice(0, MAX);
+    const notes = ids.length ? await anki('notesInfo', { notes: ids }) : [];
+    if (my !== seq) return;
+    const lq = q.toLowerCase();
+    results = notes.map(n => {
+      const f = fieldsInOrder(n), p = f.map(([, v]) => plain(v).toLowerCase());
+      const rank = p.some(v => v === lq) ? 0 : p.some(v => v.startsWith(lq)) ? 1 : 2;
+      return { note: n, fields: f, title: plain(f[0] ? f[0][1] : ''), sub: plain(f[1] ? f[1][1] : ''), rank };
+    });
+    if (q) results.sort((a, b) => a.rank - b.rank || a.title.length - b.title.length);
+    else results.sort((a, b) => b.note.noteId - a.note.noteId);
+    sel = results.length ? 0 : -1;
+    render(q);
+    if (!results.length) showEmpty(q ? 'No cards contain “' + esc(q) + '”.' : 'Your collection has no cards yet.');
+    else showDetail();
+    $status.textContent = (q ? '' : 'All ') + results.length + (results.length === 1 ? ' card' : ' cards') +
+      (ids.length === MAX ? ' (first ' + MAX + ')' : '') + ' · ↑↓ to move · ⌘E edits · ⌘O opens in Anki · Esc closes';
+  } catch (e) {
+    if (my !== seq) return;
+    results = []; render(q);
+    showEmpty(/fetch|Load failed|network/i.test(e.message)
+      ? 'Couldn’t reach Anki. Make sure Anki is open and the AnkiConnect add-on is installed.'
+      : esc(e.message));
+  }
+}
+
+function render(q) {
+  $list.innerHTML = results.map((r, i) =>
+    `<li data-i="${i}" class="${i === sel ? 'sel' : ''}"><div class="t">${highlight(r.title, q) || '&nbsp;'}</div>` +
+    `<div class="s">${highlight(r.sub, q) || '&nbsp;'}</div></li>`).join('');
+}
+
+function select(i) {
+  if (!results.length) return;
+  sel = Math.max(0, Math.min(results.length - 1, i));
+  [...$list.children].forEach((li, j) => li.classList.toggle('sel', j === sel));
+  $list.children[sel].scrollIntoView({ block: 'nearest' });
+  showDetail();
+}
+
+function showEmpty(msg) { $detail.innerHTML = `<div class="empty">${msg}</div>`; }
+
+// Field HTML comes from the user's own cards; drop scripts and handlers, and show sound tags as text.
+function cleanHtml(html) {
+  const d = document.createElement('div');
+  d.innerHTML = String(html).replace(/\[sound:([^\]]*)\]/g, '🔊 $1');
+  d.querySelectorAll('script, iframe, object, embed, link, style').forEach(n => n.remove());
+  d.querySelectorAll('*').forEach(n => [...n.attributes].forEach(a => { if (/^on/i.test(a.name)) n.removeAttribute(a.name); }));
+  return d;
+}
+
+async function showDetail() {
+  const r = results[sel];
+  if (!r) return;
+  // Furigana is shown over the word in the heading rather than as its own field.
+  const n = r.note, furi = r.fields.find(([k]) => k === 'Furigana');
+  const [first, ...rest] = r.fields.filter(([k]) => k !== 'Furigana');
+  const heading = furi && plain(furi[1]) ? furiganaToRuby(esc(plain(furi[1]))) : first ? cleanHtml(first[1]).innerHTML : '';
+  let h = `<h1>${heading}</h1>`;
+  for (const [k, v] of rest) if (plain(v) || /<img/i.test(v)) h += `<div class="field"><div class="k">${esc(k)}</div><div class="v">${cleanHtml(v).innerHTML}</div></div>`;
+  h += `<div class="meta"><div>${esc(n.modelName)} · <span id="deck"></span></div>` +
+       (n.tags.length ? `<div>${n.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : '') +
+       `<div id="cards"></div><div class="actions"><button id="edit">Edit</button><button id="open">Open in Anki</button>` +
+       `<span class="msg" id="msg">${esc(r.savedMsg || '')}</span></div></div>`;
+  r.savedMsg = '';
+  $detail.innerHTML = h;
+  $detail.scrollTop = 0;
+  document.getElementById('open').onclick = openInAnki;
+  document.getElementById('edit').onclick = startEdit;
+  loadImages(n.noteId);
+  try {
+    const [cards, names] = await Promise.all([anki('cardsInfo', { cards: n.cards }), templateNames(n.modelName)]);
+    if (results[sel] !== r) return;
+    document.getElementById('deck').textContent = [...new Set(cards.map(c => c.deckName))].join(', ');
+    document.getElementById('cards').innerHTML = cards.sort((a, b) => a.ord - b.ord).map(c =>
+      `<div>${esc(names[c.ord] || 'Card ' + (c.ord + 1))} card · ${c.queue === -1 ? 'suspended' : c.type === 0 ? 'new' : c.type === 2 ? 'reviewed every ' + c.interval + (c.interval === 1 ? ' day' : ' days') : 'learning'}</div>`).join('');
+  } catch (e) { /* deck and schedule are extras; the fields are already shown */ }
+}
+
+// cardsInfo only gives a card's template index (ord), so map it to the note type's template names.
+const templateCache = {};
+function templateNames(model) {
+  return templateCache[model] || (templateCache[model] = anki('modelTemplates', { modelName: model }).then(Object.keys));
+}
+
+// Media lives in Anki's collection folder, so fetch images through AnkiConnect.
+function loadImages(noteId) {
+  $detail.querySelectorAll('img').forEach(async img => {
+    const src = img.getAttribute('src');
+    if (!src || /^(data|https?):/i.test(src)) return;
+    try {
+      const b64 = await anki('retrieveMediaFile', { filename: decodeURIComponent(src) });
+      if (b64 && results[sel] && results[sel].note.noteId === noteId) img.src = 'data:image/' + (src.split('.').pop() || 'png') + ';base64,' + b64;
+    } catch (e) {}
+  });
+}
+
+// Editing. Plain fields are edited as text (line breaks ↔ <br>, special characters escaped on save);
+// fields holding other HTML, images or sounds are edited as raw HTML so nothing is lost.
+let editing = null;
+
+function toEditable(value) {
+  const s = String(value).replace(/<br\s*\/?>/gi, '\n');
+  if (/<[a-z!\/]/i.test(s) || /\[sound:/.test(s)) return { raw: true, text: String(value) };
+  const t = document.createElement('textarea');
+  t.innerHTML = s;
+  return { raw: false, text: t.value };
+}
+const fromEditable = (text, raw) => raw ? text
+  : text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>');
+
+function grow(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
+
+function startEdit() {
+  const r = results[sel];
+  if (!r || editing) return;
+  editing = { r, fields: r.fields.map(([k, v]) => ({ name: k, ...toEditable(v) })) };
+  document.body.classList.add('editing');
+  $detail.innerHTML = '<div class="edit">' + editing.fields.map((f, i) =>
+    `<div class="field"><div class="k">${esc(f.name)}${f.raw ? ' <span class="hint">(HTML)</span>' : ''}</div>` +
+    `<textarea rows="1" data-i="${i}" class="${f.raw ? 'raw' : ''}" spellcheck="false"></textarea></div>`).join('') +
+    '<div class="actions"><button class="primary" id="save">Save</button><button id="cancel">Cancel</button>' +
+    '<span class="msg" id="msg">⌘S saves · Esc cancels</span></div></div>';
+  $detail.querySelectorAll('textarea').forEach(t => {
+    t.value = editing.fields[+t.dataset.i].text;
+    grow(t);
+    t.addEventListener('input', () => grow(t));
+  });
+  document.getElementById('save').onclick = saveEdit;
+  document.getElementById('cancel').onclick = cancelEdit;
+  // Start in the second field (Meaning for vocab) when there is one.
+  const areas = $detail.querySelectorAll('textarea'), first = areas[Math.min(1, areas.length - 1)];
+  first.focus();
+  first.setSelectionRange(first.value.length, first.value.length);
+}
+
+function endEdit() {
+  editing = null;
+  document.body.classList.remove('editing');
+}
+
+function cancelEdit() {
+  endEdit();
+  showDetail();
+}
+
+async function saveEdit() {
+  if (!editing || editing.saving) return;
+  const { r } = editing, msg = document.getElementById('msg');
+  const changed = {};
+  $detail.querySelectorAll('textarea').forEach(t => {
+    const f = editing.fields[+t.dataset.i];
+    if (t.value !== f.text) changed[f.name] = fromEditable(t.value, f.raw);
+  });
+  const firstName = editing.fields[0].name;
+  if (firstName in changed && !plain(changed[firstName]) && !/<img/i.test(changed[firstName])) {
+    msg.className = 'msg err'; msg.textContent = firstName + ' can’t be empty.'; return;
+  }
+  // Keep Furigana in step with Word and Reading unless it was edited by hand.
+  const value = name => {
+    const t = [...$detail.querySelectorAll('textarea')].find(t => editing.fields[+t.dataset.i].name === name);
+    return t ? (editing.fields[+t.dataset.i].raw ? plain(t.value) : t.value) : '';
+  };
+  if (editing.fields.some(f => f.name === 'Furigana') && !('Furigana' in changed) && ('Word' in changed || 'Reading' in changed)) {
+    changed.Furigana = fromEditable(furigana(value('Word'), value('Reading')), false);
+  }
+  if (!Object.keys(changed).length) { cancelEdit(); return; }
+  editing.saving = true;
+  msg.className = 'msg'; msg.textContent = 'Saving…';
+  try {
+    await anki('updateNoteFields', { note: { id: r.note.noteId, fields: changed } });
+    const [n] = await anki('notesInfo', { notes: [r.note.noteId] });
+    const f = fieldsInOrder(n);
+    Object.assign(r, { note: n, fields: f, title: plain(f[0] ? f[0][1] : ''), sub: plain(f[1] ? f[1][1] : ''), savedMsg: 'Saved' });
+    endEdit();
+    render($q.value.trim());
+    select(sel);
+  } catch (e) {
+    editing.saving = false;
+    msg.className = 'msg err';
+    msg.textContent = /fetch|Load failed|network/i.test(e.message) ? 'Couldn’t reach Anki — not saved.' : 'Not saved: ' + e.message;
+  }
+}
+
+function openInAnki() {
+  const r = results[sel];
+  if (r) anki('guiBrowse', { query: 'nid:' + r.note.noteId }).catch(() => {});
+}
+
+let timer;
+$q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(search, 120); });
+$list.addEventListener('mousedown', e => { const li = e.target.closest('li'); if (li) { e.preventDefault(); select(+li.dataset.i); } });
+$list.addEventListener('dblclick', openInAnki);
+document.addEventListener('keydown', e => {
+  if (e.isComposing) return; // let the Japanese IME use Esc and arrows while converting
+  if (editing) {
+    if (e.key === 'Escape') { cancelEdit(); e.preventDefault(); }
+    else if (e.metaKey && (e.key === 's' || e.key === 'Enter')) { saveEdit(); e.preventDefault(); }
+    return;
+  }
+  if (e.key === 'e' && e.metaKey) { startEdit(); e.preventDefault(); }
+  else if (e.key === 'Escape') { window.webkit.messageHandlers.lookup.postMessage('close'); e.preventDefault(); }
+  else if (e.key === 'ArrowDown' && !e.isComposing) { select(sel + 1); e.preventDefault(); }
+  else if (e.key === 'ArrowUp' && !e.isComposing) { select(sel - 1); e.preventDefault(); }
+  else if (e.key === 'o' && e.metaKey) { openInAnki(); e.preventDefault(); }
+});
+
+$q.value = INITIAL;
+$q.focus();
+$q.select();
+search();
+</script>
+</body>
+</html>

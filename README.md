@@ -41,6 +41,31 @@ Run the tests with:
 swift test --scratch-path ~/Library/Caches/Ankani/build
 ```
 
+## Quick Actions
+
+`QuickActions/` holds three macOS Quick Actions for adding and looking up cards from any app. They talk to
+AnkiConnect too, so Anki needs to be open.
+
+| Quick Action | Shortcut | What it does |
+|---|---|---|
+| Add to Anki | ⌃⌘A, or right-click → Services | Adds the selected word as a `Japanese Vocab` note in `Inbox`, with fields to fill in first. Furigana is generated from Word and Reading. |
+| Look Up in Anki | ⌃⌘L, or right-click → Services | Searches your cards for the selected text: a list of matches, details, and editing. |
+| Search Anki | ⌥⌘L | The same lookup with an empty search box, which lists every note. |
+
+Install or update them with:
+
+```bash
+scripts/install-quick-actions.sh
+```
+
+This copies the scripts to `~/Library/Application Support/AnkiQuickAdd`, the workflows to `~/Library/Services`,
+and sets the shortcuts. Edit the files in `QuickActions/`, then run it again.
+
+- `add-to-anki.js`, `lookup-in-anki.js`: JavaScript for Automation (JXA) scripts that open the native windows.
+- `lookup.html`: the lookup window's interface, shown in a web view.
+- `furigana.js`: turns a word and its reading into Anki furigana (`食[た]べ 物[もの]`); used by both.
+- `workflows/`: the Automator Quick Actions, each a "Run Shell Script" step that runs one of the scripts.
+
 ## Testing with your own deck
 
 `scripts/reset-test-deck.sh [deck]` makes every card in a deck (default `Inbox`) due today, so you can review the
