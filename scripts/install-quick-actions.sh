@@ -7,7 +7,7 @@ cd "$(dirname "$0")/../QuickActions"
 
 DEST="$HOME/Library/Application Support/AnkiQuickAdd"
 mkdir -p "$DEST"
-cp add-to-anki.js lookup-in-anki.js lookup.html furigana.js "$DEST/"
+cp add-to-anki.js lookup-in-anki.js lookup.html furigana.js kanji-readings.txt "$DEST/"
 
 for wf in workflows/*.workflow; do
   rm -rf "$HOME/Library/Services/${wf:t}"

@@ -1,13 +1,15 @@
 // Source: Amadare repo, QuickActions/. Edit it there and run scripts/install-quick-actions.sh; installed copies get overwritten.
 // Add selected text to Anki as a Japanese Vocab note (Meaning + Reading cards), with all fields editable before adding.
-// Requires furigana.js next to this script.
+// Requires furigana.js and kanji-readings.txt next to this script.
 // Called by the "Add to Anki" Quick Action with the selection in $ANKI_FRONT.
 ObjC.import('stdlib');
 ObjC.import('Cocoa');
 
 // furigana(word, reading), shared with the lookup popup.
-(0, eval)($.NSString.stringWithContentsOfFileEncodingError(
-  $.getenv('HOME') + '/Library/Application Support/AnkiQuickAdd/furigana.js', $.NSUTF8StringEncoding, null).js);
+const readFile = name => $.NSString.stringWithContentsOfFileEncodingError(
+  $.getenv('HOME') + '/Library/Application Support/AnkiQuickAdd/' + name, $.NSUTF8StringEncoding, null).js;
+(0, eval)(readFile('furigana.js'));
+setKanjiReadings(readFile('kanji-readings.txt'));
 
 const DECK = 'Inbox';
 const MODEL = 'Japanese Vocab';

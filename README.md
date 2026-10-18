@@ -69,10 +69,20 @@ and sets the shortcuts. Edit the files in `QuickActions/`, then run it again.
 
 - `add-to-anki.js`, `lookup-in-anki.js`: JavaScript for Automation (JXA) scripts that open the native windows.
 - `lookup.html`: the lookup window's interface, shown in a web view.
-- `furigana.js`: turns a word and its reading into Anki furigana (`食[た]べ 物[もの]`); used by both.
+- `furigana.js`: turns a word and its reading into Anki furigana with each reading over its own kanji
+  (`未[み]来[らい]`, `食[た]べ 物[もの]`); used by both.
+- `kanji-readings.txt`: the readings of the ~3,000 jōyō and jinmeiyō kanji that `furigana.js` (and the app's
+  `KanjiReadings.swift`) split compounds with. Regenerate both with `scripts/make-kanji-readings.py kanjidic2.xml.gz`.
 - `workflows/`: the Automator Quick Actions, each a "Run Shell Script" step that runs one of the scripts.
 
 ## Testing with your own deck
 
 `scripts/reset-test-deck.sh [deck]` makes every card in a deck (default `Inbox`) due today, so you can review the
 same cards again.
+
+## Credits
+
+Kanji readings for furigana (`QuickActions/kanji-readings.txt`, `Sources/AmadareCore/KanjiReadings.swift`) come
+from [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) by the Electronic Dictionary Research and
+Development Group, used under [CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html); those files are under the
+same licence.

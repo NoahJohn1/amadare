@@ -66,7 +66,9 @@ function run() {
 
   // The http://localhost origin is on AnkiConnect's default CORS allow-list, so the page can fetch from it.
   const template = $.NSString.stringWithContentsOfFileEncodingError(DIR + '/lookup.html', $.NSUTF8StringEncoding, null).js;
-  const furiganaJs = $.NSString.stringWithContentsOfFileEncodingError(DIR + '/furigana.js', $.NSUTF8StringEncoding, null).js;
+  const read = name => $.NSString.stringWithContentsOfFileEncodingError(DIR + '/' + name, $.NSUTF8StringEncoding, null).js;
+  const furiganaJs = read('furigana.js') +
+    '\nsetKanjiReadings(' + JSON.stringify(read('kanji-readings.txt')).replace(/</g, '\\u003c') + ');';
   const html = template.replace('__INITIAL__', () => JSON.stringify(query).replace(/</g, '\\u003c'))
     .replace('__FURIGANA_JS__', () => furiganaJs);
   web.loadHTMLStringBaseURL(html, $.NSURL.URLWithString('http://localhost/'));
