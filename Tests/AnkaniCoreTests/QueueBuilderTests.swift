@@ -1,5 +1,5 @@
 import Testing
-@testable import RecallCore
+@testable import AnkaniCore
 
 private let d = #"deck:"Inbox""#
 

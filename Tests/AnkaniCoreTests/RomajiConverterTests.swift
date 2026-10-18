@@ -1,5 +1,5 @@
 import Testing
-@testable import RecallCore
+@testable import AnkaniCore
 
 @Test(arguments: zip(
     ["nikki", "konnnichiha", "kyou", "onnna", "hon'ya", "ikimashita", "matte", "ii", "nyuu", "ra-me",

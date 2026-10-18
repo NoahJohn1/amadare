@@ -1,5 +1,5 @@
 import Testing
-@testable import RecallCore
+@testable import AnkaniCore
 
 private func seg(_ text: String, _ ruby: String? = nil) -> RubySegment { RubySegment(text: text, ruby: ruby) }
 

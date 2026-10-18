@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import RecallCore
+import AnkaniCore
 
 struct DashboardView: View {
     enum LoadState: Equatable {
@@ -44,6 +44,8 @@ struct DashboardView: View {
     private var readyView: some View {
         let count = snapshot?.cards.count ?? 0
         return VStack(spacing: 32) {
+            Wordmark()
+
             Menu {
                 ForEach(decks, id: \.self) { deck in
                     Button(deck) { selectedDeck = deck }
@@ -92,7 +94,7 @@ struct DashboardView: View {
     private var notRunningView: some View {
         VStack(spacing: 16) {
             Text("Anki isn't open").font(.title2.bold())
-            Text("Recall reads your cards through AnkiConnect, so Anki needs to be running.")
+            Text("Ankani reads your cards through AnkiConnect, so Anki needs to be running.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack {

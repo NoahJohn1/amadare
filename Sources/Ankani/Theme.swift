@@ -1,5 +1,5 @@
 import SwiftUI
-import RecallCore
+import AnkaniCore
 
 /// Colors. Glass needs something behind it to refract, so every screen sits on `KanjiBackdrop`:
 /// the frosted window, tinted with ink, under a huge blurred copy of the word being studied.
@@ -8,6 +8,9 @@ enum Theme {
     static let violet = Color(red: 0.63, green: 0.0, blue: 0.94)      // #A100F0, WaniKani vocabulary
     static let correct = Color(red: 0.53, green: 0.8, blue: 0.0)      // #88CC00
     static let wrong = Color(red: 1.0, green: 0.0, blue: 0.2)         // #FF0033
+
+    /// Ankani = Anki + WaniKani; kani is 蟹, "crab".
+    static let brandGlyph = "蟹"
 }
 
 extension Stage {
@@ -41,6 +44,24 @@ struct KanjiBackdrop: View {
             .animation(.easeInOut(duration: 0.5), value: glyph)
             .ignoresSafeArea()
             .accessibilityHidden(true)
+    }
+}
+
+/// The 蟹 mark in a violet glass disc beside the "Ankani" name.
+struct Wordmark: View {
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(Theme.brandGlyph)
+                .font(.system(size: 26, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 50, height: 50)
+                .glassEffect(.regular.tint(Theme.violet.opacity(0.7)), in: .circle)
+            Text("Ankani")
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Ankani")
     }
 }
 

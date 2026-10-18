@@ -1,5 +1,5 @@
 import Observation
-import RecallCore
+import AnkaniCore
 
 @MainActor
 @Observable

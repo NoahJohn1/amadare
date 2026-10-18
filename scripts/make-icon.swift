@@ -1,4 +1,4 @@
-// Renders the 1024×1024 app icon PNG: a purple rounded square with 記.
+// Renders the 1024×1024 app icon PNG: Ankani's mark, 蟹 (kani, "crab"), on a violet rounded square.
 // Usage: swift scripts/make-icon.swift <output.png>
 import AppKit
 
@@ -12,7 +12,7 @@ NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
 let canvas = NSRect(x: 0, y: 0, width: size, height: size)
 NSColor(red: 0.63, green: 0.0, blue: 0.94, alpha: 1).setFill()
 NSBezierPath(roundedRect: canvas.insetBy(dx: 100, dy: 100), xRadius: 185, yRadius: 185).fill()
-let glyph = NSAttributedString(string: "記", attributes: [
+let glyph = NSAttributedString(string: "蟹", attributes: [
     .font: NSFont.systemFont(ofSize: 500, weight: .bold),
     .foregroundColor: NSColor.white,
 ])

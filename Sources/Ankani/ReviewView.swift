@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import RecallCore
+import AnkaniCore
 
 struct ReviewView: View {
     @Environment(AppModel.self) private var model

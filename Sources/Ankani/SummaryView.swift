@@ -1,5 +1,5 @@
 import SwiftUI
-import RecallCore
+import AnkaniCore
 
 struct SummaryView: View {
     @Environment(AppModel.self) private var model

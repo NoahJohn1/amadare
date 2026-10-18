@@ -1,5 +1,5 @@
 import Testing
-@testable import RecallCore
+@testable import AnkaniCore
 
 @Test func exactIgnoresCasePunctuationAndWidth() {
     #expect(AnswerChecker.check("Diary!", against: "Diary, Journal", kind: .meaning) == .exact)

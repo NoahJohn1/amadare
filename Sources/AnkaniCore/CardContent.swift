@@ -61,7 +61,7 @@ public enum CardContent {
             notes = ""
             reading = ""
         }
-        // Japanese Vocab always gets one (Recall adds the field at launch); other types only if they have it.
+        // Japanese Vocab always gets one (Ankani adds the field at launch); other types only if they have it.
         let mnemonicField = info.modelName == japaneseVocabModel || info.fieldNames.contains(Self.mnemonicField)
             ? Self.mnemonicField : nil
         guard !prompt.isEmpty, !answer.isEmpty else { return nil }

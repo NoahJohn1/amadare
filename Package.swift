@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "Recall",
+    name: "Ankani",
     platforms: [.macOS(.v26)],
-    products: [.executable(name: "Recall", targets: ["Recall"])],
+    products: [.executable(name: "Ankani", targets: ["Ankani"])],
     targets: [
-        .target(name: "RecallCore"),
-        .executableTarget(name: "Recall", dependencies: ["RecallCore"]),
-        .testTarget(name: "RecallCoreTests", dependencies: ["RecallCore"]),
+        .target(name: "AnkaniCore"),
+        .executableTarget(name: "Ankani", dependencies: ["AnkaniCore"]),
+        .testTarget(name: "AnkaniCoreTests", dependencies: ["AnkaniCore"]),
     ]
 )

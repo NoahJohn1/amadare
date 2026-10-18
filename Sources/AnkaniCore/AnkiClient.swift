@@ -8,7 +8,7 @@ public enum AnkiError: Error, Equatable, Sendable {
     case badResponse
 }
 
-/// The parts of AnkiConnect's `cardsInfo` that Recall uses.
+/// The parts of AnkiConnect's `cardsInfo` that Ankani uses.
 public struct CardInfo: Sendable, Equatable {
     public let cardId: Int
     public let noteId: Int
@@ -67,7 +67,7 @@ extension CardInfo: Decodable {
     }
 }
 
-/// Everything Recall needs from Anki. `LiveAnki` talks to AnkiConnect; tests use a fake.
+/// Everything Ankani needs from Anki. `LiveAnki` talks to AnkiConnect; tests use a fake.
 public protocol AnkiService: Sendable {
     func deckNames() async throws -> [String]
     func findCards(_ query: String) async throws -> [Int]
@@ -82,7 +82,7 @@ struct AnkiEnvelope<T: Decodable>: Decodable {
     let error: String?
 }
 
-/// For actions whose result Recall doesn't need (often null).
+/// For actions whose result Ankani doesn't need (often null).
 struct IgnoredResult: Decodable {
     init(from decoder: Decoder) throws {}
 }

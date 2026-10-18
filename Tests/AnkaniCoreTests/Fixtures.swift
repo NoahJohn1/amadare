@@ -1,4 +1,4 @@
-@testable import RecallCore
+@testable import AnkaniCore
 
 func card(
     _ id: Int,

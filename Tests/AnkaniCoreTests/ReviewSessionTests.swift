@@ -1,5 +1,5 @@
 import Testing
-@testable import RecallCore
+@testable import AnkaniCore
 
 @MainActor
 struct ReviewSessionTests {

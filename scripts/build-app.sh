@@ -1,13 +1,13 @@
 #!/bin/zsh
-# Builds Recall.app and installs it to ~/Applications.
+# Builds Ankani.app and installs it to ~/Applications.
 # Build output lives outside ~/Documents: the file provider there adds attributes codesign rejects.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-WORK="$HOME/Library/Caches/Recall"
+WORK="$HOME/Library/Caches/Ankani"
 SCRATCH="$WORK/build"
-swift build -c release --product Recall --scratch-path "$SCRATCH"
-BIN="$(swift build -c release --scratch-path "$SCRATCH" --show-bin-path)/Recall"
+swift build -c release --product Ankani --scratch-path "$SCRATCH"
+BIN="$(swift build -c release --scratch-path "$SCRATCH" --show-bin-path)/Ankani"
 
 ICONS="$WORK/icons"
 if [[ ! -f "$ICONS/AppIcon.icns" ]]; then
@@ -20,20 +20,20 @@ if [[ ! -f "$ICONS/AppIcon.icns" ]]; then
   iconutil -c icns "$ICONS/AppIcon.iconset" -o "$ICONS/AppIcon.icns"
 fi
 
-APP="$WORK/Recall.app"
+APP="$WORK/Ankani.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/Recall"
+cp "$BIN" "$APP/Contents/MacOS/Ankani"
 cp "$ICONS/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>Recall</string>
-  <key>CFBundleDisplayName</key><string>Recall</string>
-  <key>CFBundleIdentifier</key><string>io.github.noahjohn1.recall</string>
-  <key>CFBundleExecutable</key><string>Recall</string>
+  <key>CFBundleName</key><string>Ankani</string>
+  <key>CFBundleDisplayName</key><string>Ankani</string>
+  <key>CFBundleIdentifier</key><string>io.github.noahjohn1.ankani</string>
+  <key>CFBundleExecutable</key><string>Ankani</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
@@ -47,7 +47,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 PLIST
 codesign --force --sign - "$APP"
 
-DEST="$HOME/Applications/Recall.app"
+DEST="$HOME/Applications/Ankani.app"
 mkdir -p "$HOME/Applications"
 rm -rf "$DEST"
 ditto "$APP" "$DEST"

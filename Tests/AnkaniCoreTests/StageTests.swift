@@ -1,5 +1,5 @@
 import Testing
-@testable import RecallCore
+@testable import AnkaniCore
 
 @Test(arguments: zip(
     [-600, 0, 6, 7, 29, 30, 89, 90, 179, 180, 900],

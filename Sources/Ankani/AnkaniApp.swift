@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
-import RecallCore
+import AnkaniCore
 
 @main
-struct RecallApp: App {
+struct AnkaniApp: App {
     @State private var model = AppModel()
 
     init() {
@@ -12,7 +12,7 @@ struct RecallApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Recall") {
+        WindowGroup("Ankani") {
             RootView()
                 .environment(model)
                 .frame(minWidth: 720, minHeight: 600)
@@ -45,11 +45,11 @@ struct RootView: View {
         }
     }
 
-    /// The current card's word during reviews; 記 ("record") everywhere else.
+    /// The current card's word during reviews; elsewhere the brand mark, 蟹 (kani, "crab").
     private var backdropGlyph: String {
         if case .review(let session) = model.screen, let card = session.current {
             return String(card.prompt.prefix(2))
         }
-        return "記"
+        return Theme.brandGlyph
     }
 }

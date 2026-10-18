@@ -1,5 +1,5 @@
 import Testing
-@testable import RecallCore
+@testable import AnkaniCore
 
 @Test(arguments: zip(
     ["Diary<br>Journal", "<div>to see</div><div>to watch</div>", "<b>run</b> &amp; jump&nbsp;!",
