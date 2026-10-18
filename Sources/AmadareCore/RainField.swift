@@ -54,7 +54,7 @@ public struct RainField: Sendable, Equatable {
         for _ in 0..<targetBeads { beads.append(randomBead()) }
         for _ in 0..<max(1, Int(width / 28)) {
             streaks.append(Streak(x: rng.next(in: 0...width), y: rng.next(in: 0...height),
-                                  length: rng.next(in: 30...70), speed: rng.next(in: 600...900)))
+                                  length: rng.next(in: 30...70), speed: rng.next(in: 300...450)))
         }
         nextRunnerIn = rng.next(in: 0.5...2.5)
     }
@@ -110,7 +110,7 @@ public struct RainField: Sendable, Equatable {
     private mutating func spawnRunners(_ dt: Double) {
         nextRunnerIn -= dt
         guard nextRunnerIn <= 0 else { return }
-        nextRunnerIn = rng.next(in: 1.5...4)
+        nextRunnerIn = rng.next(in: 3...7)
         // A heavy bead starts to slide; otherwise a drop arrives at the top.
         if let index = beads.indices.filter({ beads[$0].radius > 2.6 }).randomElement(using: &rng) {
             let bead = beads.remove(at: index)
@@ -126,11 +126,11 @@ public struct RainField: Sendable, Equatable {
     private mutating func moveRunners(_ dt: Double) {
         for i in runners.indices {
             var runner = runners[i]
-            let maxSpeed = 60 + runner.drop.radius * 14
-            runner.speed = min(maxSpeed, runner.speed + 80 * dt)
+            let maxSpeed = 30 + runner.drop.radius * 7
+            runner.speed = min(maxSpeed, runner.speed + 35 * dt)
             runner.drop.y += runner.speed * dt
-            runner.wobble += dt * 3
-            runner.drop.x += sin(runner.wobble) * 6 * dt
+            runner.wobble += dt * 1.5
+            runner.drop.x += sin(runner.wobble) * 3 * dt   // a slight meander, a few points at most
 
             // Swallow beads in the path.
             let reach = runner.drop.radius

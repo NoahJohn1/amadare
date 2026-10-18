@@ -28,7 +28,7 @@ private func run(_ field: inout RainField, seconds: Double) {
         field.removeAllBeads()
         if withBead { field.addBead(x: 400, y: 200, radius: 3) }
         field.addRunner(x: 400, y: 100, radius: 4)
-        run(&field, seconds: 1.5)
+        run(&field, seconds: 3)
         return field
     }
     let swallowed = slide(withBead: true)
@@ -61,4 +61,12 @@ private func run(_ field: inout RainField, seconds: Double) {
     run(&a, seconds: 5)
     run(&b, seconds: 5)
     #expect(a == b)
+}
+
+@Test func rainIsGentle() {
+    var field = RainField(width: 800, height: 600, seed: 6, autoRunners: false)
+    field.addRunner(x: 400, y: 50, radius: 5)
+    run(&field, seconds: 2)
+    #expect(field.runners[0].drop.y < 200)                  // slides, doesn't plunge
+    #expect(field.streaks.allSatisfy { $0.speed <= 450 })   // light rain, not a downpour
 }
