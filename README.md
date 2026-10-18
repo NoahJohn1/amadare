@@ -7,8 +7,11 @@ Amadare is a front end for [Anki](https://apps.ankiweb.net). It reads your cards
 WaniKani does, and sends each result back to Anki. Anki's scheduler stays in charge, so your
 decks stay in sync with Anki everywhere else you use it.
 
-**Amadare** (雨垂れ) is rain dripping from the eaves, from the proverb 雨垂れ石を穿つ: *dripping rain wears
-through stone*. A downpour does nothing to the stone; a steady drip, every day, gets through it.
+**Amadare** (雨垂れ) is rain dripping from the eaves, from the proverb 雨垂れ石を穿つ, "dripping rain wears
+through stone":
+
+> *Storms pass, but a steady drip cuts through stone.*
+
 Consistency trumps intensity. The mark is 雫, a single drop.
 
 ## What it does

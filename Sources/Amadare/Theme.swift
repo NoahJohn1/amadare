@@ -13,7 +13,7 @@ enum Theme {
 
     /// Amadare (雨垂れ) is rain dripping from the eaves; its mark is 雫, a single drop.
     static let brandGlyph = "雫"
-    static let motto = "Consistency trumps intensity."
+    static let motto = "Storms pass, but a steady drip cuts through stone."
 }
 
 extension Stage {
