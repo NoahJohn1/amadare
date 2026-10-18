@@ -1,4 +1,4 @@
-// Source: Ankani repo, QuickActions/. Edit it there and run scripts/install-quick-actions.sh; installed copies get overwritten.
+// Source: Amadare repo, QuickActions/. Edit it there and run scripts/install-quick-actions.sh; installed copies get overwritten.
 // Search the Anki collection like a dictionary: a floating window with a search box, matching notes and their details.
 // Called by the "Look Up in Anki" Quick Action with the selection in $ANKI_QUERY, or by "Anki Lookup" with no selection.
 // The UI is lookup.html in a web view; it talks to AnkiConnect (http://127.0.0.1:8765) directly.

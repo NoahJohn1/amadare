@@ -1,13 +1,15 @@
-# Ankani
+# Amadare
 
 WaniKani-style reviews for your Anki decks, as a native Mac app.
 
-Ankani is a front end for [Anki](https://apps.ankiweb.net). It reads your cards through the
+Amadare is a front end for [Anki](https://apps.ankiweb.net). It reads your cards through the
 [AnkiConnect](https://ankiweb.net/shared/info/2055492159) add-on, has you **type** every answer the way
 WaniKani does, and sends each result back to Anki. Anki's scheduler stays in charge, so your
 decks stay in sync with Anki everywhere else you use it.
 
-The name is Anki + WaniKani. *Kani* is 蟹, "crab", which is the app's mark.
+**Amadare** (雨垂れ) is rain dripping from the eaves, from the proverb 雨垂れ石を穿つ: *dripping rain wears
+through stone*. A downpour does nothing to the stone; a steady drip, every day, gets through it.
+Consistency trumps intensity. The mark is 雫, a single drop.
 
 ## What it does
 
@@ -19,7 +21,8 @@ The name is Anki + WaniKani. *Kani* is 蟹, "crab", which is the app's mark.
   counts it as right.
 - **Furigana and mnemonics.** After answering, the reading appears above the kanji, and you can write a mnemonic
   that's saved to the note in Anki.
-- **Liquid Glass.** Glass panels over a frosted window and a huge, blurred copy of the word you're studying.
+- **A rainy window.** Liquid Glass panels over frosted glass beaded with water, with light rain falling behind
+  and a dim, brush-style copy of the word you're studying.
 
 ## Requirements
 
@@ -32,13 +35,13 @@ The name is Anki + WaniKani. *Kani* is 蟹, "crab", which is the app's mark.
 scripts/build-app.sh
 ```
 
-This builds a release copy and installs `~/Applications/Ankani.app`. Builds live in `~/Library/Caches/Ankani`,
+This builds a release copy and installs `~/Applications/Amadare.app`. Builds live in `~/Library/Caches/Amadare`,
 because codesign rejects the attributes iCloud Drive adds to files inside `~/Documents`.
 
 Run the tests with:
 
 ```bash
-swift test --scratch-path ~/Library/Caches/Ankani/build
+swift test --scratch-path ~/Library/Caches/Amadare/build
 ```
 
 ## Quick Actions

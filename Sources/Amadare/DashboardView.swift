@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import AnkaniCore
+import AmadareCore
 
 struct DashboardView: View {
     enum LoadState: Equatable {
@@ -70,7 +70,7 @@ struct DashboardView: View {
             }
             .buttonStyle(.glassProminent)
             .buttonBorderShape(.roundedRectangle(radius: 40))
-            .tint(Theme.violet)
+            .tint(Theme.mizu)
             .keyboardShortcut(.defaultAction)
             .disabled(count == 0)
 
@@ -94,7 +94,7 @@ struct DashboardView: View {
     private var notRunningView: some View {
         VStack(spacing: 16) {
             Text("Anki isn't open").font(.title2.bold())
-            Text("Ankani reads your cards through AnkiConnect, so Anki needs to be running.")
+            Text("Amadare reads your cards through AnkiConnect, so Anki needs to be running.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack {
@@ -107,7 +107,7 @@ struct DashboardView: View {
                     }
                 }
                 .buttonStyle(.glassProminent)
-                .tint(Theme.violet)
+                .tint(Theme.mizu)
                 .disabled(isLaunching)
                 Button("Try again") { Task { await load() } }
                     .buttonStyle(.glass)

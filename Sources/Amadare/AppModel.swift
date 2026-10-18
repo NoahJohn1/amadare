@@ -1,5 +1,5 @@
 import Observation
-import AnkaniCore
+import AmadareCore
 
 @MainActor
 @Observable

@@ -1,4 +1,4 @@
-@testable import AnkaniCore
+@testable import AmadareCore
 
 func card(
     _ id: Int,

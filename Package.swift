@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "Ankani",
+    name: "Amadare",
     platforms: [.macOS(.v26)],
-    products: [.executable(name: "Ankani", targets: ["Ankani"])],
+    products: [.executable(name: "Amadare", targets: ["Amadare"])],
     targets: [
-        .target(name: "AnkaniCore"),
-        .executableTarget(name: "Ankani", dependencies: ["AnkaniCore"]),
-        .testTarget(name: "AnkaniCoreTests", dependencies: ["AnkaniCore"]),
+        .target(name: "AmadareCore"),
+        .executableTarget(name: "Amadare", dependencies: ["AmadareCore"]),
+        .testTarget(name: "AmadareCoreTests", dependencies: ["AmadareCore"]),
     ]
 )

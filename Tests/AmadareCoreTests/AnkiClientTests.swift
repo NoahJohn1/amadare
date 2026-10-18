@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import AnkaniCore
+@testable import AmadareCore
 
 @Test func decodesCardsInfoWithFieldOrder() throws {
     let json = #"""

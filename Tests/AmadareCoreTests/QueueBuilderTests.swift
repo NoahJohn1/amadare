@@ -1,5 +1,5 @@
 import Testing
-@testable import AnkaniCore
+@testable import AmadareCore
 
 private let d = #"deck:"Inbox""#
 

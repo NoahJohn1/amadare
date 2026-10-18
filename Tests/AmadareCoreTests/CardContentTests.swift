@@ -1,5 +1,5 @@
 import Testing
-@testable import AnkaniCore
+@testable import AmadareCore
 
 @Test(arguments: zip(
     ["Diary<br>Journal", "<div>to see</div><div>to watch</div>", "<b>run</b> &amp; jump&nbsp;!",

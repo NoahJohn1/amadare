@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Makes every card in a deck due today again, so it can be reviewed in Ankani repeatedly.
+# Makes every card in a deck due today again, so it can be reviewed in Amadare repeatedly.
 # Usage: scripts/reset-test-deck.sh [deck]   (default: Inbox; Anki must be open)
 set -euo pipefail
 DECK="${1:-Inbox}"

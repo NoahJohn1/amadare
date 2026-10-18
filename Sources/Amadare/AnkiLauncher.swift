@@ -1,5 +1,5 @@
 import AppKit
-import AnkaniCore
+import AmadareCore
 
 @MainActor
 enum AnkiLauncher {

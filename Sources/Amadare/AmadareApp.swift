@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
-import AnkaniCore
+import AmadareCore
 
 @main
-struct AnkaniApp: App {
+struct AmadareApp: App {
     @State private var model = AppModel()
 
     init() {
@@ -12,7 +12,7 @@ struct AnkaniApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Ankani") {
+        WindowGroup("Amadare") {
             RootView()
                 .environment(model)
                 .frame(minWidth: 720, minHeight: 600)
@@ -32,6 +32,7 @@ struct RootView: View {
     var body: some View {
         ZStack {
             KanjiBackdrop(glyph: backdropGlyph)
+            RainGlass()
             switch model.screen {
             case .dashboard:
                 DashboardView()
@@ -45,7 +46,7 @@ struct RootView: View {
         }
     }
 
-    /// The current card's word during reviews; elsewhere the brand mark, 蟹 (kani, "crab").
+    /// The current card's word during reviews; elsewhere the brand mark, 雫 (a drop).
     private var backdropGlyph: String {
         if case .review(let session) = model.screen, let card = session.current {
             return String(card.prompt.prefix(2))

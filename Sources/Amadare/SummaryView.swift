@@ -1,5 +1,5 @@
 import SwiftUI
-import AnkaniCore
+import AmadareCore
 
 struct SummaryView: View {
     @Environment(AppModel.self) private var model
@@ -20,7 +20,7 @@ struct SummaryView: View {
             }
             Button("Back to dashboard") { model.backToDashboard() }
                 .buttonStyle(.glassProminent)
-                .tint(Theme.violet)
+                .tint(Theme.mizu)
                 .controlSize(.large)
                 .keyboardShortcut(.defaultAction)
         }

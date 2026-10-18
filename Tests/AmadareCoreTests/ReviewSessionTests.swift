@@ -1,5 +1,5 @@
 import Testing
-@testable import AnkaniCore
+@testable import AmadareCore
 
 @MainActor
 struct ReviewSessionTests {

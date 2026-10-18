@@ -1,22 +1,24 @@
-# Ankani — WaniKani-style reviews for Anki decks
+# Amadare — WaniKani-style reviews for Anki decks
+
+Named for 雨垂れ石を穿つ, "dripping rain wears through stone": consistency trumps intensity. Formerly Recall, then Ankani.
 
 **Date:** 2026-10-17
 **Status:** Approved
 
 ## Goal
 
-A native macOS app for reviewing Anki decks with a WaniKani-style interface: you see a card's front in a big colored band, type the answer, and get instant right/wrong feedback. Anki stays the single source of truth for cards and scheduling; Ankani is a front end that reads cards from Anki and reports answers back.
+A native macOS app for reviewing Anki decks with a WaniKani-style interface: you see a card's front in a big colored band, type the answer, and get instant right/wrong feedback. Anki stays the single source of truth for cards and scheduling; Amadare is a front end that reads cards from Anki and reports answers back.
 
 ## Decisions
 
 | Question | Decision |
 |---|---|
 | How you answer | Always type the answer; the app checks it (WaniKani-style). No self-grading. |
-| Scheduling | Anki's scheduler decides when cards are due. Ankani shows WaniKani-style stages derived from Anki's intervals. |
+| Scheduling | Anki's scheduler decides when cards are due. Amadare shows WaniKani-style stages derived from Anki's intervals. |
 | New cards | Reviews only — no separate Lessons. New cards appear in the review queue. |
 | Talking to Anki | Through the AnkiConnect add-on (`http://127.0.0.1:8765`, API version 6). Anki must be running. |
-| Platform | Native SwiftUI app, macOS 26+ (Liquid Glass), built with Swift Package Manager into `Ankani.app`. |
-| Look | Liquid Glass on a dark ink backdrop showing a huge blurred copy of the current word; prompt, answer box, pills and stage tiles are glass. Japanese text in the system font (Hiragino Sans). |
+| Platform | Native SwiftUI app, macOS 26+ (Liquid Glass), built with Swift Package Manager into `Amadare.app`. |
+| Look | A rainy window: frosted glass beaded with water (beads condense, drops slide down swallowing beads and leaving fading trails, faint rain falls behind; still under Reduce Motion), Liquid Glass panels, and a dim brush-style (Hiragino Mincho) copy of the current word behind it all. Blue palette: night-rain navy, 藍 indigo prompt, 水 water-blue buttons, stages from light rain to still water. UI text in the system font. |
 
 ## Screens
 
@@ -76,7 +78,7 @@ Derived from the card's current interval (from `cardsInfo`; negative values are 
 | Enlightened | 90–179 days |
 | Burned | ≥ 180 days |
 
-After each answer, Ankani re-reads that card's `cardsInfo` to get the new interval and computes the new stage for the badge.
+After each answer, Amadare re-reads that card's `cardsInfo` to get the new interval and computes the new stage for the badge.
 
 ### Card content
 
@@ -114,10 +116,10 @@ Result type: `.exact`, `.nearMiss(expected: String)`, or `.wrong`.
 Swift package with a library target for everything testable and a thin app target:
 
 ```
-Ankani/
+Amadare/
   Package.swift
   Sources/
-    AnkaniCore/
+    AmadareCore/
       AnkiClient.swift        // AnkiConnect HTTP: deckNames, findCards, cardsInfo,
                               // getDeckConfig, answerCards. Protocol AnkiService + live impl.
       CardContent.swift       // HTML → plain text, prompt/answer extraction, skip rule
@@ -127,23 +129,23 @@ Ankani/
       QueueBuilder.swift      // builds the session queue from AnkiService
       ReviewSession.swift     // @Observable state machine: current card, submit, advance,
                               // re-queue, wrap up, stats; talks to AnkiService
-    Ankani/
-      AnkaniApp.swift
+    Amadare/
+      AmadareApp.swift
       DashboardView.swift
       ReviewView.swift
       SummaryView.swift
       AnkiLauncher.swift      // open Anki via NSWorkspace, poll until connected
       Theme.swift             // WaniKani-style colors, stage bar, shake effect
   Tests/
-    AnkaniCoreTests/          // AnswerChecker, RomajiConverter, CardContent, Stage, QueueBuilder,
+    AmadareCoreTests/          // AnswerChecker, RomajiConverter, CardContent, Stage, QueueBuilder,
                               // ReviewSession (with a fake AnkiService)
   scripts/
-    build-app.sh              // release build → ~/Applications/Ankani.app (Info.plist, icon)
+    build-app.sh              // release build → ~/Applications/Amadare.app (Info.plist, icon)
 ```
 
 - `AnkiService` is a protocol so `QueueBuilder` and `ReviewSession` are tested against an in-memory fake, without Anki running.
 - AnkiConnect errors (`"error"` non-null) and connection failures surface as typed `AnkiError` values (`.notRunning`, `.api(String)`).
-- `build-app.sh` builds outside `~/Documents` (its file provider adds attributes `codesign` rejects) and installs `~/Applications/Ankani.app`.
+- `build-app.sh` builds outside `~/Documents` (its file provider adds attributes `codesign` rejects) and installs `~/Applications/Amadare.app`.
 
 ## Testing
 
@@ -154,7 +156,7 @@ Ankani/
 
 - **Wrong answers wait to be sent.** After a wrong answer, two buttons appear: **Retry** (⌘R) puts the card back in the queue without telling Anki, and **Mark correct** (⌘Return) counts it as right and sends Good. Return moves on and sends Again. Correct answers are still sent right away.
 - **Furigana.** After answering, the Japanese Vocab word shows its reading in small type above the kanji, lined up so okurigana isn't covered (行(い)きました). On Meaning cards a **Show/Hide furigana** button (⌘F, remembered) shows it before answering too. Reading cards never show it before answering.
-- **Mnemonics.** After answering, **Add/Edit mnemonic** (⌘E) edits the note's `Mnemonic` field (one per word, shared by its Meaning and Reading cards, and the same field the Add to Anki popup uses). Ankani adds the field to Japanese Vocab at launch if missing; other note types get mnemonics only if they have a `Mnemonic` field.
+- **Mnemonics.** After answering, **Add/Edit mnemonic** (⌘E) edits the note's `Mnemonic` field (one per word, shared by its Meaning and Reading cards, and the same field the Add to Anki popup uses). Amadare adds the field to Japanese Vocab at launch if missing; other note types get mnemonics only if they have a `Mnemonic` field.
 - **Copyable question.** The prompt text is selectable, and right-click offers Copy.
 - **Frosted window.** The window background is a heavy blur of whatever is behind it, tinted with ink.
 

@@ -1,4 +1,4 @@
-// Source: Ankani repo, QuickActions/. Edit it there and run scripts/install-quick-actions.sh; installed copies get overwritten.
+// Source: Amadare repo, QuickActions/. Edit it there and run scripts/install-quick-actions.sh; installed copies get overwritten.
 // Furigana in Anki's format ("食[た]べ 物[もの]", shown with {{furigana:Furigana}}), built from a word and its kana reading.
 // The reading is lined up against the kana in the word, so each kanji run gets its own reading;
 // consecutive kanji share one reading (未来[みらい]). If they can't be lined up, the whole word gets the reading.

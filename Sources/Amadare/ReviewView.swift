@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import AnkaniCore
+import AmadareCore
 
 struct ReviewView: View {
     @Environment(AppModel.self) private var model
@@ -196,7 +196,7 @@ struct ReviewView: View {
                         .buttonStyle(.glass)
                     Button("Save mnemonic") { save(mnemonicDraft, for: card) }
                         .buttonStyle(.glassProminent)
-                        .tint(Theme.violet)
+                        .tint(Theme.mizu)
                         .keyboardShortcut("s")
                 }
                 if let mnemonicError {
@@ -317,7 +317,7 @@ struct ReviewView: View {
     }
 }
 
-/// The question in a violet glass slab. Japanese Vocab words get furigana over their kanji
+/// The question in an indigo glass slab. Japanese Vocab words get furigana over their kanji
 /// (space for it is always reserved, so revealing it doesn't move the word). Selectable for copying.
 struct PromptView: View {
     let card: ReviewCard
@@ -333,7 +333,7 @@ struct PromptView: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 20)
             .frame(maxWidth: 640, minHeight: 210)
-            .glassEffect(.regular.tint(Theme.violet.opacity(0.5)), in: .rect(cornerRadius: 40))
+            .glassEffect(.regular.tint(Theme.ai.opacity(0.55)), in: .rect(cornerRadius: 40))
             .contextMenu {
                 Button("Copy “\(card.prompt)”") {
                     NSPasteboard.general.clearContents()

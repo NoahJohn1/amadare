@@ -1,5 +1,5 @@
 import Testing
-@testable import AnkaniCore
+@testable import AmadareCore
 
 @Test(arguments: zip(
     ["nikki", "konnnichiha", "kyou", "onnna", "hon'ya", "ikimashita", "matte", "ii", "nyuu", "ra-me",
