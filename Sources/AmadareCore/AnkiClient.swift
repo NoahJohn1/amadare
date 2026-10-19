@@ -91,11 +91,29 @@ public struct LiveAnki: AnkiService {
     public static let defaultURL = URL(string: "http://127.0.0.1:8765")!
 
     let url: URL
+    /// AnkiConnect's `apiKey`, required once Anki is shared on the network.
+    let apiKey: String?
     let session: URLSession
 
-    public init(url: URL = LiveAnki.defaultURL, session: URLSession = .shared) {
+    public init(url: URL = LiveAnki.defaultURL, apiKey: String? = nil, session: URLSession = .shared) {
         self.url = url
+        self.apiKey = apiKey.flatMap { $0.isEmpty ? nil : $0 }
         self.session = session
+    }
+
+    /// The AnkiConnect URL for an address typed by hand: `192.168.1.20`, `my-mac.local` or `anki-box`
+    /// get http and port 8765; a full URL, like an `https://….ts.net` address, is used as given.
+    public static func serverURL(from address: String) -> URL? {
+        let trimmed = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.contains("://") {
+            guard let url = URL(string: trimmed), url.host() != nil else { return nil }
+            return url
+        }
+        guard var components = URLComponents(string: "http://" + trimmed), components.host?.isEmpty == false
+        else { return nil }
+        if components.port == nil { components.port = 8765 }
+        return components.url
     }
 
     public func deckNames() async throws -> [String] {
@@ -191,8 +209,9 @@ public struct LiveAnki: AnkiService {
     private func send(_ action: String, _ params: [String: Any]) async throws -> Data {
         var request = URLRequest(url: url, timeoutInterval: 10)
         request.httpMethod = "POST"
-        request.httpBody = try JSONSerialization.data(
-            withJSONObject: ["action": action, "version": 6, "params": params])
+        var body: [String: Any] = ["action": action, "version": 6, "params": params]
+        if let apiKey { body["key"] = apiKey }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
         do {
             return try await session.data(for: request).0
         } catch is URLError {

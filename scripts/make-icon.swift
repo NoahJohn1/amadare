@@ -1,5 +1,6 @@
 // Renders the 1024×1024 app icon PNG: Amadare's mark, 雫 (a drop), on rain-dark indigo glass with beads of water.
-// Usage: swift scripts/make-icon.swift <output.png>
+// Usage: swift scripts/make-icon.swift <output.png> [--ios]
+// --ios fills the whole square, since iOS rounds the corners itself.
 import AppKit
 
 let output = URL(fileURLWithPath: CommandLine.arguments[1])
@@ -10,7 +11,9 @@ let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: size, pixelsHigh: 
 NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
 let canvas = NSRect(x: 0, y: 0, width: size, height: size)
-let tile = NSBezierPath(roundedRect: canvas.insetBy(dx: 100, dy: 100), xRadius: 185, yRadius: 185)
+let tile = CommandLine.arguments.contains("--ios")
+    ? NSBezierPath(rect: canvas)
+    : NSBezierPath(roundedRect: canvas.insetBy(dx: 100, dy: 100), xRadius: 185, yRadius: 185)
 
 // Indigo (藍) at the top deepening to night-rain navy.
 NSGradient(starting: NSColor(red: 0.20, green: 0.48, blue: 0.70, alpha: 1),

@@ -70,13 +70,14 @@ __FURIGANA_JS__
 </script>
 <script>
 const INITIAL = __INITIAL__;
+const KEY = __ANKI_KEY__;
 const MAX = 1000;
 const $q = document.getElementById('q'), $list = document.getElementById('list'),
       $detail = document.getElementById('detail'), $status = document.getElementById('status');
 let results = [], sel = -1, seq = 0;
 
 async function anki(action, params) {
-  const r = await fetch('http://127.0.0.1:8765', { method: 'POST', body: JSON.stringify({ action, version: 6, params: params || {} }) });
+  const r = await fetch('http://127.0.0.1:8765', { method: 'POST', body: JSON.stringify({ action, version: 6, key: KEY, params: params || {} }) });
   const j = await r.json();
   if (j.error) throw new Error(j.error);
   return j.result;

@@ -8,6 +8,13 @@ ObjC.import('WebKit');
 
 const DIR = $.getenv('HOME') + '/Library/Application Support/AnkiQuickAdd';
 
+// AnkiConnect's API key, set once Anki is shared with the iPhone (scripts/share-anki.sh); null otherwise.
+function ankiKey() {
+  const meta = $.NSString.stringWithContentsOfFileEncodingError(
+    $.getenv('HOME') + '/Library/Application Support/Anki2/addons21/2055492159/meta.json', $.NSUTF8StringEncoding, null);
+  try { return (JSON.parse(meta.js).config || {}).apiKey || null; } catch (e) { return null; }
+}
+
 function run() {
   let query = '';
   try { query = $.getenv('ANKI_QUERY') || ''; } catch (e) {} // unset when opened without a selection
@@ -70,7 +77,8 @@ function run() {
   const furiganaJs = read('furigana.js') +
     '\nsetKanjiReadings(' + JSON.stringify(read('kanji-readings.txt')).replace(/</g, '\\u003c') + ');';
   const html = template.replace('__INITIAL__', () => JSON.stringify(query).replace(/</g, '\\u003c'))
-    .replace('__FURIGANA_JS__', () => furiganaJs);
+    .replace('__FURIGANA_JS__', () => furiganaJs)
+    .replace('__ANKI_KEY__', () => JSON.stringify(ankiKey()));
   web.loadHTMLStringBaseURL(html, $.NSURL.URLWithString('http://localhost/'));
 
   win.center;

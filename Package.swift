@@ -3,8 +3,12 @@ import PackageDescription
 
 let package = Package(
     name: "Amadare",
-    platforms: [.macOS(.v26)],
-    products: [.executable(name: "Amadare", targets: ["Amadare"])],
+    platforms: [.macOS(.v26), .iOS(.v26)],
+    products: [
+        .executable(name: "Amadare", targets: ["Amadare"]),
+        // The iPhone app (iOS/) links this.
+        .library(name: "AmadareCore", targets: ["AmadareCore"]),
+    ],
     targets: [
         .target(name: "AmadareCore"),
         .executableTarget(name: "Amadare", dependencies: ["AmadareCore"]),

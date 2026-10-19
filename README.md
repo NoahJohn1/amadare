@@ -130,6 +130,42 @@ A few more things:
 - If the "couldn't save" banner appears, open Anki and click **Retry**. Nothing is lost.
 - With **Reduce Motion** on (System Settings → Accessibility → Display), the rain and clouds hold still.
 
+## On the iPhone
+
+`iOS/` holds an iPhone version of Amadare with the same reviews: typed answers, romaji to kana, Retry and
+Mark correct, furigana, mnemonics and stages. It has no Anki of its own. It reaches your Anki over the network
+through AnkiConnect, and for now that Anki is the one on your Mac, so the Mac needs to be awake with Anki open
+while you review. Later it can be a small always-on home server instead: change the address in the app's
+Settings.
+
+1. **Share Anki on your network.** On the Mac, run:
+
+   ```bash
+   scripts/share-anki.sh
+   ```
+
+   This restarts Anki with AnkiConnect listening on the network instead of only on the Mac, and requiring an
+   API key. The key is created once and then kept. The script prints the key and the Mac's addresses. Amadare on
+   the Mac and the Quick Actions read the key themselves; they pick it up the next time they start. If macOS
+   asks whether Anki may accept incoming connections, choose **Allow**. `scripts/share-anki.sh --off` goes
+   back to the Mac only.
+
+2. **Build the app.** You need XcodeGen (`brew install xcodegen`). Then:
+
+   ```bash
+   scripts/build-ios.sh
+   ```
+
+   This generates `iOS/Amadare.xcodeproj` and checks that it builds. Open the project in Xcode to run it on a
+   simulator or your iPhone.
+
+3. **Connect.** In the app, tap the gear and enter the server address and API key that `share-anki.sh`
+   printed, then **Test connection**. At home, the Mac's `.local` name or Wi-Fi address works. Anywhere else,
+   install [Tailscale](https://tailscale.com) on the Mac and the iPhone and use the Mac's Tailscale address.
+
+On the iPhone, Return checks your answer and moves to the next card, as on the Mac. The keyboard stays the
+English one, since romaji is converted as you type.
+
 ## Quick Actions
 
 `QuickActions/` holds three macOS Quick Actions for adding and looking up cards from any app. They talk to
@@ -168,6 +204,10 @@ swift test --scratch-path ~/Library/Caches/Amadare/build
 
 Builds live in `~/Library/Caches/Amadare` rather than the repo, because codesign rejects the attributes iCloud
 Drive adds to files inside `~/Documents`.
+
+The iPhone app builds with `scripts/build-ios.sh`. It shares `AmadareCore` with the Mac app, along with
+`Theme.swift` and `RainGlass.swift` from the Mac app's sources; the rest of `iOS/Amadare/` is iPhone screens.
+`iOS/project.yml` is the source of truth for the Xcode project, which is generated and not checked in.
 
 `scripts/reset-test-deck.sh [deck]` makes every card in a deck (default `Inbox`) due today, so you can review the
 same cards again while testing.

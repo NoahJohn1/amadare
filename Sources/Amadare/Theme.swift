@@ -97,8 +97,13 @@ struct StageBar: View {
                             .monospacedDigit()
                         Text(stage.name).font(.callout)
                     }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .foregroundStyle(.white)
-                    .frame(width: 112, height: 72)
+                    .padding(.horizontal, 4)
+                    // Narrower on the iPhone, where five full-width tiles don't fit.
+                    .frame(maxWidth: 112)
+                    .frame(height: 72)
                     .glassEffect(.regular.tint(stage.color.opacity(0.7)), in: .rect(cornerRadius: 18))
                 }
             }

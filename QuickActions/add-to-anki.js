@@ -21,8 +21,15 @@ function html(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>');
 }
 
+// AnkiConnect's API key, set once Anki is shared with the iPhone (scripts/share-anki.sh); null otherwise.
+function ankiKey() {
+  const meta = $.NSString.stringWithContentsOfFileEncodingError(
+    $.getenv('HOME') + '/Library/Application Support/Anki2/addons21/2055492159/meta.json', $.NSUTF8StringEncoding, null);
+  try { return (JSON.parse(meta.js).config || {}).apiKey || null; } catch (e) { return null; }
+}
+
 function anki(app, action, params) {
-  const body = JSON.stringify({ action, version: 6, params: params || {} });
+  const body = JSON.stringify({ action, version: 6, key: ankiKey(), params: params || {} });
   const out = app.doShellScript('curl -s --max-time 5 -X POST http://127.0.0.1:8765 --data-binary ' + quoted(body));
   const res = JSON.parse(out);
   if (res.error) throw new Error(res.error);

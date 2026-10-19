@@ -10,7 +10,7 @@ final class AppModel {
     }
 
     var screen: Screen = .dashboard
-    let anki = LiveAnki()
+    let anki = LiveAnki(apiKey: AnkiConnectConfig.localAPIKey())
     private var preparedNoteType = false
 
     /// Makes sure Anki has the Japanese Vocab note type, with its Mnemonic field. Runs once per launch.

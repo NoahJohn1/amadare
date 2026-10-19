@@ -28,6 +28,15 @@ import Testing
     }
 }
 
+@Test func serverURLFillsInSchemeAndPort() {
+    #expect(LiveAnki.serverURL(from: "192.168.1.20") == URL(string: "http://192.168.1.20:8765"))
+    #expect(LiveAnki.serverURL(from: " my-mac.local ") == URL(string: "http://my-mac.local:8765"))
+    #expect(LiveAnki.serverURL(from: "anki-box:9000") == URL(string: "http://anki-box:9000"))
+    #expect(LiveAnki.serverURL(from: "https://anki.tail1234.ts.net") == URL(string: "https://anki.tail1234.ts.net"))
+    #expect(LiveAnki.serverURL(from: "") == nil)
+    #expect(LiveAnki.serverURL(from: "http://") == nil)
+}
+
 @Test func connectionRefusedIsNotRunning() async {
     // Port 9 (discard) has no listener, so the connection is refused immediately.
     let anki = LiveAnki(url: URL(string: "http://127.0.0.1:9")!)
@@ -39,6 +48,7 @@ final class StubURLProtocol: URLProtocol {
     nonisolated(unsafe) static var responses: [String] = []
     nonisolated(unsafe) static var actions: [String] = []
     nonisolated(unsafe) static var params: [[String: Any]] = []
+    nonisolated(unsafe) static var keys: [String?] = []
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -50,6 +60,7 @@ final class StubURLProtocol: URLProtocol {
            let action = json["action"] as? String {
             Self.actions.append(action)
             Self.params.append(json["params"] as? [String: Any] ?? [:])
+            Self.keys.append(json["key"] as? String)
         }
         let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -126,9 +137,17 @@ struct StubbedAnkiTests {
         #expect(StubURLProtocol.actions == ["modelNames", "modelFieldNames", "modelTemplates"])
     }
 
-    private func stubbedAnki() -> LiveAnki {
+    @Test func sendsTheAPIKeyOnlyWhenSet() async throws {
+        StubURLProtocol.keys = []
+        StubURLProtocol.responses = [#"{"result":["A"],"error":null}"#, #"{"result":["A"],"error":null}"#]
+        _ = try await stubbedAnki(apiKey: "secret").deckNames()
+        _ = try await stubbedAnki(apiKey: "").deckNames()
+        #expect(StubURLProtocol.keys == ["secret", nil])
+    }
+
+    private func stubbedAnki(apiKey: String? = nil) -> LiveAnki {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubURLProtocol.self]
-        return LiveAnki(session: URLSession(configuration: configuration))
+        return LiveAnki(apiKey: apiKey, session: URLSession(configuration: configuration))
     }
 }
