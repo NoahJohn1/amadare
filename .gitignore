@@ -4,3 +4,4 @@ build/
 iOS/Amadare.xcodeproj/
 iOS/Amadare/Info.plist
 iOS/Amadare/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+iOS/Signing.local.xcconfig

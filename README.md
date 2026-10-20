@@ -157,11 +157,57 @@ Settings.
    ```
 
    This generates `iOS/Amadare.xcodeproj` and checks that it builds. Open the project in Xcode to run it on a
-   simulator or your iPhone.
+   simulator. To put it on your iPhone, see below.
 
 3. **Connect.** In the app, tap the gear and enter the server address and API key that `share-anki.sh`
    printed, then **Test connection**. At home, the Mac's `.local` name or Wi-Fi address works. Anywhere else,
    install [Tailscale](https://tailscale.com) on the Mac and the iPhone and use the Mac's Tailscale address.
+
+### Putting it on your iPhone and keeping it there
+
+Without a paid Apple developer account, Xcode signs the app with a free "Personal Team", and that signature
+runs out after 7 days. After that the app won't open until it's reinstalled. A small agent on the Mac does
+this for you, so once it's set up, plugging the iPhone into the Mac (or just having it on the same Wi-Fi) is
+all it takes.
+
+Once:
+
+1. **Sign in to Xcode.** Open Xcode → Settings → Accounts, click **+** and add your Apple ID. A free one is
+   fine; Xcode creates the Personal Team.
+2. **Trust the Mac.** Plug the iPhone into the Mac with a cable, unlock it and tap **Trust**. To have it
+   work over Wi-Fi too, open Xcode → Window → Devices and Simulators once while it's plugged in; the iPhone
+   is then paired and reachable whenever both are on the same network.
+3. **Turn on Developer Mode** on the iPhone: Settings → Privacy & Security → Developer Mode, then restart it
+   when asked and confirm. (The setting appears once the iPhone has been connected to Xcode.)
+4. **Install the app and the agent:**
+
+   ```bash
+   scripts/install-iphone.sh
+   ```
+
+   ```bash
+   scripts/install-resign-agent.sh
+   ```
+
+   The first finds your Personal Team in Xcode, builds the app for your iPhone and installs it. It keeps the
+   team id in `iOS/Signing.local.xcconfig`, which isn't checked in. The second installs the agent.
+5. **Trust yourself as a developer** on the iPhone, the first time only: Settings → General → VPN & Device
+   Management, tap your Apple ID under Developer App and tap **Trust**.
+
+After that there's nothing to do. Whenever the iPhone is plugged in, and every half hour while it's on the
+same Wi-Fi, the agent checks when the app was last installed. Once that's 5 days ago (or the signature has
+less than 2 days left), it rebuilds the app from this checkout and reinstalls it, and a notification says
+so. Your reviews and settings are kept. If the iPhone is locked, a notification asks you to unlock it, and it
+waits ten minutes before trying again later. If something needs you, such as Xcode's sign-in having expired
+or Developer Mode being off, a notification says what.
+
+- `scripts/resign-iphone.sh` runs the same check by hand; `--force` reinstalls even if it isn't due.
+- The log is `~/Library/Logs/Amadare/resign.log`.
+- `scripts/install-resign-agent.sh --remove` removes the agent. It runs the scripts in this checkout, so
+  re-run the installer if you move the repo.
+- Free accounts can make only 10 new app IDs a week and have 3 sideloaded apps on a phone. Amadare always
+  uses the same app ID, so renewing never counts against the first; the second only matters if you sideload
+  other apps.
 
 On the iPhone, Return checks your answer and moves to the next card, as on the Mac. The keyboard stays the
 English one, since romaji is converted as you type.
