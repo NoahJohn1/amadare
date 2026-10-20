@@ -72,10 +72,10 @@ struct ReviewView: View {
         return false
     }
 
-    /// Furigana appears once the card is answered, or on Meaning cards when the toggle is on.
-    /// Never before answering a Reading card, where it would give the answer away.
+    /// Reading cards show furigana once answered. Meaning cards show it only when the toggle is
+    /// on, even after answering, so it doesn't give away the word's Reading card.
     private func showsFurigana(_ card: ReviewCard) -> Bool {
-        isAnswered || (card.kind == .meaning && showMeaningFurigana)
+        card.kind == .meaning ? showMeaningFurigana : isAnswered
     }
 
     private func kindRow(_ card: ReviewCard) -> some View {
