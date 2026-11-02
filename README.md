@@ -134,9 +134,8 @@ A few more things:
 
 `iOS/` holds an iPhone version of Amadare with the same reviews: typed answers, romaji to kana, Retry and
 Mark correct, furigana, mnemonics and stages. It has no Anki of its own. It reaches your Anki over the network
-through AnkiConnect, and for now that Anki is the one on your Mac, so the Mac needs to be awake with Anki open
-while you review. Later it can be a small always-on home server instead: change the address in the app's
-Settings.
+through AnkiConnect, so whichever machine runs Anki needs to be on with Anki open while you review: your Mac, as
+described here, or an always-on PC (see [Running Anki on a server](#running-anki-on-a-server)).
 
 1. **Share Anki on your network.** On the Mac, run:
 
@@ -212,10 +211,38 @@ or Developer Mode being off, a notification says what.
 On the iPhone, Return checks your answer and moves to the next card, as on the Mac. The keyboard stays the
 English one, since romaji is converted as you type.
 
+## Running Anki on a server
+
+Anki can live on an always-on PC instead of your Mac, so reviews on the iPhone don't need the Mac awake.
+`scripts/nimbasa/` holds the Windows side: a task that keeps Anki running in your desktop session, and a daily
+AnkiWeb sync. [Tailscale Serve](https://tailscale.com/kb/1312/serve) makes it reachable over HTTPS from your own
+devices, while AnkiConnect stays bound to localhost on the PC.
+
+On the Mac, point Amadare and the Quick Actions at it:
+
+```bash
+scripts/use-anki-server.sh https://your-pc.your-tailnet.ts.net
+```
+
+It asks for the API key and saves both in `~/Library/Application Support/Amadare/connection.json`.
+`scripts/use-anki-server.sh --off` goes back to the Anki on your Mac. On the iPhone, enter the same address and
+key in Settings, with Tailscale connected.
+
+With a server set:
+
+- **Look Up and Search** use a local copy of your cards, so they're instant and work offline. Each time you open
+  one, the copy refreshes in the background. Saving an edit, deck and schedule details, and images need the server.
+- **Add to Anki** needs the server. If it can't be reached, the window reopens with what you typed so you can
+  try again.
+- **Reviews** need the server, since Anki does the scheduling.
+- **Open in Anki** is hidden, because Anki's window is on the other machine.
+
+`scripts/measure-anki-latency.sh` times a full search against the server.
+
 ## Quick Actions
 
 `QuickActions/` holds three macOS Quick Actions for adding and looking up cards from any app. They talk to
-AnkiConnect too, so Anki needs to be open.
+AnkiConnect too, so Anki needs to be running, on this Mac or on your server.
 
 | Quick Action | Shortcut | What it does |
 |---|---|---|
@@ -234,6 +261,9 @@ and sets the shortcuts. Edit the files in `QuickActions/`, then run it again.
 
 - `add-to-anki.js`, `lookup-in-anki.js`: JavaScript for Automation (JXA) scripts that open the native windows.
 - `lookup.html`: the lookup window's interface, shown in a web view.
+- `connection.js`: where AnkiConnect is, for both scripts: your server if one is set, else this Mac.
+- `lookup-search.js`: searches the local copy of your cards. Test it with
+  `node --test Tests/QuickActions/lookup-search.test.mjs`.
 - `furigana.js`: turns a word and its reading into Anki furigana with each reading over its own kanji
   (`未[み]来[らい]`, `食[た]べ 物[もの]`); used by both.
 - `kanji-readings.txt`: the readings of the ~3,000 jōyō and jinmeiyō kanji that `furigana.js` (and the app's
