@@ -1,19 +1,12 @@
 // Source: Amadare repo, QuickActions/. Edit it there and run scripts/install-quick-actions.sh; installed copies get overwritten.
 // Search the Anki collection like a dictionary: a floating window with a search box, matching notes and their details.
 // Called by the "Look Up in Anki" Quick Action with the selection in $ANKI_QUERY, or by "Anki Lookup" with no selection.
-// The UI is lookup.html in a web view; it talks to AnkiConnect (http://127.0.0.1:8765) directly.
+// The UI is lookup.html in a web view; it talks to AnkiConnect directly, at the address from connection.js.
 ObjC.import('stdlib');
 ObjC.import('Cocoa');
 ObjC.import('WebKit');
 
 const DIR = $.getenv('HOME') + '/Library/Application Support/AnkiQuickAdd';
-
-// AnkiConnect's API key, set once Anki is shared with the iPhone (scripts/share-anki.sh); null otherwise.
-function ankiKey() {
-  const meta = $.NSString.stringWithContentsOfFileEncodingError(
-    $.getenv('HOME') + '/Library/Application Support/Anki2/addons21/2055492159/meta.json', $.NSUTF8StringEncoding, null);
-  try { return (JSON.parse(meta.js).config || {}).apiKey || null; } catch (e) { return null; }
-}
 
 function run() {
   let query = '';
@@ -74,11 +67,15 @@ function run() {
   // The http://localhost origin is on AnkiConnect's default CORS allow-list, so the page can fetch from it.
   const template = $.NSString.stringWithContentsOfFileEncodingError(DIR + '/lookup.html', $.NSUTF8StringEncoding, null).js;
   const read = name => $.NSString.stringWithContentsOfFileEncodingError(DIR + '/' + name, $.NSUTF8StringEncoding, null).js;
+  (0, eval)(read('connection.js'));
+  const connection = readAnkiConnection();
   const furiganaJs = read('furigana.js') +
     '\nsetKanjiReadings(' + JSON.stringify(read('kanji-readings.txt')).replace(/</g, '\\u003c') + ');';
   const html = template.replace('__INITIAL__', () => JSON.stringify(query).replace(/</g, '\\u003c'))
     .replace('__FURIGANA_JS__', () => furiganaJs)
-    .replace('__ANKI_KEY__', () => JSON.stringify(ankiKey()));
+    .replace('__ANKI_KEY__', () => JSON.stringify(connection.key))
+    .replace('__ANKI_URL__', () => JSON.stringify(connection.url))
+    .replace('__ANKI_REMOTE__', () => JSON.stringify(connection.remote));
   web.loadHTMLStringBaseURL(html, $.NSURL.URLWithString('http://localhost/'));
 
   win.center;
