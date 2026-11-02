@@ -10,6 +10,8 @@ const readFile = name => $.NSString.stringWithContentsOfFileEncodingError(
   $.getenv('HOME') + '/Library/Application Support/AnkiQuickAdd/' + name, $.NSUTF8StringEncoding, null).js;
 (0, eval)(readFile('furigana.js'));
 setKanjiReadings(readFile('kanji-readings.txt'));
+(0, eval)(readFile('connection.js'));
+const CONNECTION = readAnkiConnection();
 
 const DECK = 'Inbox';
 const MODEL = 'Japanese Vocab';
@@ -21,29 +23,56 @@ function html(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>');
 }
 
-// AnkiConnect's API key, set once Anki is shared with the iPhone (scripts/share-anki.sh); null otherwise.
-function ankiKey() {
-  const meta = $.NSString.stringWithContentsOfFileEncodingError(
-    $.getenv('HOME') + '/Library/Application Support/Anki2/addons21/2055492159/meta.json', $.NSUTF8StringEncoding, null);
-  try { return (JSON.parse(meta.js).config || {}).apiKey || null; } catch (e) { return null; }
-}
+const UNREACHABLE = 'unreachable';
 
 function anki(app, action, params) {
-  const body = JSON.stringify({ action, version: 6, key: ankiKey(), params: params || {} });
-  const out = app.doShellScript('curl -s --max-time 5 -X POST http://127.0.0.1:8765 --data-binary ' + quoted(body));
-  const res = JSON.parse(out);
+  const body = JSON.stringify({ action, version: 6, key: CONNECTION.key, params: params || {} });
+  let res;
+  try {
+    res = JSON.parse(app.doShellScript('curl -s --connect-timeout 3 --max-time 8 -X POST ' +
+      quoted(CONNECTION.url) + ' --data-binary ' + quoted(body)));
+  } catch (e) {
+    throw new Error(UNREACHABLE); // curl failed, or something other than AnkiConnect answered
+  }
   if (res.error) throw new Error(res.error);
   return res.result;
+}
+
+// One request, so curl only makes one connection. Each action in a multi needs its own key,
+// and reports its own error in its result.
+function addCard(app, fields) {
+  const results = anki(app, 'multi', { actions: [
+    { action: 'createDeck', version: 6, key: CONNECTION.key, params: { deck: DECK } },
+    { action: 'addNote', version: 6, key: CONNECTION.key, params: { note: {
+      deckName: DECK, modelName: MODEL,
+      fields,
+      options: { allowDuplicate: false }, tags: ['quick-add']
+    }}}
+  ]});
+  const failed = results.find(r => r && r.error);
+  if (failed) throw new Error(failed.error);
+}
+
+function errorText(e) {
+  if (e.message !== UNREACHABLE) return String(e.message);
+  return CONNECTION.remote
+    ? 'Couldn\'t reach Anki on the server. Your card isn\'t saved yet. Check Tailscale, then try again.'
+    : 'Couldn\'t reach Anki. Your card isn\'t saved yet. Make sure Anki is open and the AnkiConnect add-on is installed.';
 }
 
 function quoted(s) {
   return "'" + s.replace(/'/g, "'\\''") + "'";
 }
 
+// The field delegate class is registered once, so its method can't close over one window's rows: when the
+// editor reopens after a failure, it has to reach the new window through this.
+let onFieldChange = () => {};
+
 // Native window with editable Word, Meaning, Reading, Mnemonic and Notes fields. Returns null if cancelled.
+// `values` fills the fields; `error`, if any, says why the last try failed, and Add becomes Try Again.
 // Tab switches fields, Return adds, Option-Return inserts a new line, Esc cancels.
 // Add stays disabled while Word or Meaning is empty; the rest are optional.
-function editCard(word) {
+function editCard(values, error) {
   const nsapp = $.NSApplication.sharedApplication;
   nsapp.setActivationPolicy($.NSApplicationActivationPolicyAccessory);
   nsapp.activateIgnoringOtherApps(true);
@@ -114,15 +143,16 @@ function editCard(word) {
     ObjC.registerSubclass({
       name: 'AnkiFieldDelegate',
       protocols: ['NSTextFieldDelegate'],
-      methods: { 'controlTextDidChange:': { types: ['void', ['id']], implementation: function () { relayout(); updateAddButton(); } } }
+      methods: { 'controlTextDidChange:': { types: ['void', ['id']], implementation: function () { onFieldChange(); } } }
     });
   }
+  onFieldChange = () => { relayout(); updateAddButton(); };
   const fieldDelegate = $.AnkiFieldDelegate.alloc.init;
 
   const rows = FIELDS.map(([name, required]) => ({
     name, required,
     label: addLabel(required ? name : name + ' (optional)'),
-    field: name === 'Word' ? addField(word, WORD_FONT_SIZE) : addField('')
+    field: addField(values[name] || '', name === 'Word' ? WORD_FONT_SIZE : undefined)
   }));
   // Tab order follows the on-screen order.
   rows.forEach((r, i) => { r.field.nextKeyView = rows[(i + 1) % rows.length].field; });
@@ -130,8 +160,8 @@ function editCard(word) {
 
   alert = $.NSAlert.alloc.init;
   alert.messageText = 'Add to Anki';
-  alert.informativeText = 'Tab switches fields · Option-Return for a new line';
-  alert.addButtonWithTitle('Add');
+  alert.informativeText = error || 'Tab switches fields · Option-Return for a new line';
+  alert.addButtonWithTitle(error ? 'Try Again' : 'Add');
   alert.addButtonWithTitle('Cancel');
   alert.accessoryView = view;
   alert.layout;
@@ -150,25 +180,22 @@ function run() {
   const front = ($.getenv('ANKI_FRONT') || '').trim();
   if (!front) return;
 
-  const note = editCard(front);
-  if (!note || !note.Word || !note.Meaning) return; // cancelled or emptied
-  const preview = note.Word.length > 100 ? note.Word.slice(0, 100) + '…' : note.Word;
-  const fields = {};
-  FIELDS.forEach(([name]) => { fields[name] = html(note[name]); });
-  fields.Furigana = html(furigana(note.Word, note.Reading));
+  let values = { Word: front }, error = null;
+  for (;;) {
+    const note = editCard(values, error);
+    if (!note || !note.Word || !note.Meaning) return; // cancelled or emptied
+    const preview = note.Word.length > 100 ? note.Word.slice(0, 100) + '…' : note.Word;
+    const fields = {};
+    FIELDS.forEach(([name]) => { fields[name] = html(note[name]); });
+    fields.Furigana = html(furigana(note.Word, note.Reading));
 
-  try {
-    anki(app, 'createDeck', { deck: DECK });
-    anki(app, 'addNote', { note: {
-      deckName: DECK, modelName: MODEL,
-      fields,
-      options: { allowDuplicate: false }, tags: ['quick-add']
-    }});
-    app.displayNotification(preview, { withTitle: 'Card added to ' + DECK });
-  } catch (e) {
-    const msg = /curl|Unexpected|JSON/i.test(String(e.message))
-      ? 'Couldn\'t reach Anki. Make sure Anki is open and the AnkiConnect add-on is installed.'
-      : String(e.message);
-    app.displayDialog(msg, { withTitle: 'Add to Anki', buttons: ['OK'], defaultButton: 'OK', withIcon: 'caution' });
+    try {
+      addCard(app, fields);
+      app.displayNotification(preview, { withTitle: 'Card added to ' + DECK });
+      return;
+    } catch (e) {
+      values = note;
+      error = errorText(e);
+    }
   }
 }

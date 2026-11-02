@@ -346,11 +346,12 @@ function anki(app, action, params) {
   return res.result;
 }
 
-// One request, so curl only makes one connection. multi reports each action's error in its own result.
+// One request, so curl only makes one connection. Each action in a multi needs its own key,
+// and reports its own error in its result.
 function addCard(app, fields) {
   const results = anki(app, 'multi', { actions: [
-    { action: 'createDeck', version: 6, params: { deck: DECK } },
-    { action: 'addNote', version: 6, params: { note: {
+    { action: 'createDeck', version: 6, key: CONNECTION.key, params: { deck: DECK } },
+    { action: 'addNote', version: 6, key: CONNECTION.key, params: { note: {
       deckName: DECK, modelName: MODEL,
       fields,
       options: { allowDuplicate: false }, tags: ['quick-add']
@@ -1260,8 +1261,14 @@ In `do_POST`, right after the `FORWARD` print, add:
 
 ```python
         payload["key"] = API_KEY
+        if payload.get("action") == "multi":
+            # AnkiConnect checks the key on each action inside a multi too.
+            for sub in payload["params"]["actions"]:
+                sub["key"] = API_KEY
         raw = json.dumps(payload).encode("utf-8")
 ```
+
+Include a `multi` of `deckNames` and `modelNames` in the next step's test.
 
 - [ ] **Step 2: Test it locally, including rejection**
 
