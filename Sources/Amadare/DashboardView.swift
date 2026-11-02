@@ -93,22 +93,27 @@ struct DashboardView: View {
 
     private var notRunningView: some View {
         VStack(spacing: 16) {
-            Text("Anki isn't open").font(.title2.bold())
-            Text("Amadare reads your cards through AnkiConnect, so Anki needs to be running.")
+            Text(model.connection.isRemote ? "Can't reach Anki on \(model.connection.hostName)" : "Anki isn't open")
+                .font(.title2.bold())
+            Text(model.connection.isRemote
+                 ? "Check that Tailscale is on and that Anki is running on \(model.connection.hostName)."
+                 : "Amadare reads your cards through AnkiConnect, so Anki needs to be running.")
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack {
-                Button(isLaunching ? "Opening Anki…" : "Open Anki") {
-                    Task {
-                        isLaunching = true
-                        _ = await AnkiLauncher.openAndWait(anki: model.anki)
-                        isLaunching = false
-                        await load()
+                if !model.connection.isRemote {
+                    Button(isLaunching ? "Opening Anki…" : "Open Anki") {
+                        Task {
+                            isLaunching = true
+                            _ = await AnkiLauncher.openAndWait(anki: model.anki)
+                            isLaunching = false
+                            await load()
+                        }
                     }
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.mizu)
+                    .disabled(isLaunching)
                 }
-                .buttonStyle(.glassProminent)
-                .tint(Theme.mizu)
-                .disabled(isLaunching)
                 Button("Try again") { Task { await load() } }
                     .buttonStyle(.glass)
                     .disabled(isLaunching)

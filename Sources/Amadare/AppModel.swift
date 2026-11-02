@@ -10,8 +10,15 @@ final class AppModel {
     }
 
     var screen: Screen = .dashboard
-    let anki = LiveAnki(apiKey: AnkiConnectConfig.localAPIKey())
+    let connection: AnkiConnection
+    let anki: LiveAnki
     private var preparedNoteType = false
+
+    init() {
+        let connection = AnkiConnectConfig.connection()
+        self.connection = connection
+        anki = LiveAnki(url: connection.url, apiKey: connection.apiKey)
+    }
 
     /// Makes sure Anki has the Japanese Vocab note type, with its Mnemonic field. Runs once per launch.
     func prepareAnki() async {

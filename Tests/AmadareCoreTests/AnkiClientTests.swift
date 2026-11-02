@@ -49,6 +49,7 @@ final class StubURLProtocol: URLProtocol {
     nonisolated(unsafe) static var actions: [String] = []
     nonisolated(unsafe) static var params: [[String: Any]] = []
     nonisolated(unsafe) static var keys: [String?] = []
+    nonisolated(unsafe) static var statusCode = 200
 
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
@@ -62,7 +63,7 @@ final class StubURLProtocol: URLProtocol {
             Self.params.append(json["params"] as? [String: Any] ?? [:])
             Self.keys.append(json["key"] as? String)
         }
-        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: request.url!, statusCode: Self.statusCode, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: Data(Self.responses.removeFirst().utf8))
         client?.urlProtocolDidFinishLoading(self)
@@ -143,6 +144,13 @@ struct StubbedAnkiTests {
         _ = try await stubbedAnki(apiKey: "secret").deckNames()
         _ = try await stubbedAnki(apiKey: "").deckNames()
         #expect(StubURLProtocol.keys == ["secret", nil])
+    }
+
+    @Test func aBadGatewayMeansAnkiIsUnreachable() async {
+        StubURLProtocol.statusCode = 502
+        defer { StubURLProtocol.statusCode = 200 }
+        StubURLProtocol.responses = ["Bad Gateway"]
+        await #expect(throws: AnkiError.notRunning) { _ = try await stubbedAnki().deckNames() }
     }
 
     private func stubbedAnki(apiKey: String? = nil) -> LiveAnki {

@@ -213,7 +213,12 @@ public struct LiveAnki: AnkiService {
         if let apiKey { body["key"] = apiKey }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         do {
-            return try await session.data(for: request).0
+            let (data, response) = try await session.data(for: request)
+            // Tailscale Serve answers 502 when Anki is closed on the server.
+            if let http = response as? HTTPURLResponse, (500...599).contains(http.statusCode) {
+                throw AnkiError.notRunning
+            }
+            return data
         } catch is URLError {
             throw AnkiError.notRunning
         }
