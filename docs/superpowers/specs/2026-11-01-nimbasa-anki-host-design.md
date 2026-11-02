@@ -130,19 +130,18 @@ The shortcuts and window don't change. The behaviour:
 
 ### Is it worth it?
 
-Measured from the Mac to Nimbasa over a direct Tailscale path on 2026-11-01: **25–41 ms typical round trip, 106 ms worst** across 20 pings. Anki itself isn't on Nimbasa yet, so the numbers below are estimates, and phase 2 replaces them with real ones.
+Measured on 2026-11-01 with `scripts/measure-anki-latency.sh`, from the Mac to Anki on Nimbasa through Serve, with 24 test notes (the real collection's size) and a 5–17 ms average network round trip: **a full search takes 175 ms at the median and about 235 ms at p95**, across three runs of 20. A single call takes about 80 ms, of which the network and TLS are only about 25 ms, so most of the time is Anki answering. Being away from home adds to this, and wasn't measured because the decision doesn't need it.
 
 A search takes two calls (`findNotes`, then `notesInfo`), after a 120 ms typing pause:
 
-| Setup | Keystroke to results (estimate) |
+| Setup | Keystroke to results |
 |---|---|
-| Today, local Anki | about 120 ms plus Anki's time |
-| Nimbasa, live search over Serve | about 190–280 ms, more if Tailscale is relayed |
-| Local snapshot | Under 10 ms; the typing pause can go |
+| Nimbasa, live search over Serve | About 295 ms at the median, 355 ms at p95, measured plus the pause |
+| Local snapshot | Under 10 ms (estimate); the typing pause can go |
 
-An extra 100–150 ms is noticeable while typing but tolerable. Latency alone is only a modest argument for a cache. The stronger reasons are the bad cases: Tailscale reconnecting after the Mac wakes, Nimbasa restarting, or being offline. Live search would show an error or hang there, and the popup is used mid-reading, when waiting is most disruptive. The cache is also cheap, because this collection is tiny and only one place adds cards.
+A delay of about 300 ms is noticeable on every keystroke, but latency isn't the only reason for a cache. There are also the bad cases: Tailscale reconnecting after the Mac wakes, Nimbasa restarting, or being offline. Live search would show an error or hang there, and the popup is used mid-reading, when waiting is most disruptive. The cache is also cheap, because this collection is tiny and only one place adds cards.
 
-**Decision:** build it, as its own phase, after live lookup works. Skip it only if phase 2 shows a p95 under 100 ms for a full search both at home and away **and** Noah doesn't want offline lookup.
+**Decision:** build it. The bar for skipping it was a p95 under 100 ms both at home and away, and home alone is at about 235 ms.
 
 ### Design
 
