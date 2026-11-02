@@ -22,7 +22,7 @@
 - This repo is public: no tailnet name, IP address or key in anything committed. Use `nimbasa.<tailnet>.ts.net` in docs.
 - Muse stays read-only, through the proxy only.
 - No third-party packages.
-- Swift tests: `swift test --scratch-path ~/Library/Caches/Amadare/build`. JS tests: `node --test Tests/QuickActions/`.
+- Swift tests: `swift test --scratch-path ~/Library/Caches/Amadare/build`. JS tests: `node --test Tests/QuickActions/lookup-search.test.mjs`.
 - Work on the branch `nimbasa-anki`. Commit after every task. Commit messages end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Quick Action sources live in `QuickActions/`; run `scripts/install-quick-actions.sh` after editing them.
 
@@ -901,7 +901,7 @@ test('returns nothing when nothing matches', () => assert.deepEqual(ids('猫'), 
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `node --test Tests/QuickActions/`
+Run: `node --test Tests/QuickActions/lookup-search.test.mjs`
 Expected: FAIL, because `matchNotes` is undefined.
 
 - [ ] **Step 3: Write `QuickActions/lookup-search.js`**
@@ -920,7 +920,7 @@ function matchNotes(notes, query, fieldTexts) {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `node --test Tests/QuickActions/`
+Run: `node --test Tests/QuickActions/lookup-search.test.mjs`
 Expected: 5 tests pass.
 
 - [ ] **Step 5: Load and save the cache in `QuickActions/lookup-in-anki.js`**
@@ -1420,7 +1420,7 @@ Add to the file list:
 
 ```markdown
 - `connection.js`: where AnkiConnect is, for both scripts: your server if one is set, else this Mac.
-- `lookup-search.js`: searches the local copy of your cards. Test it with `node --test Tests/QuickActions/`.
+- `lookup-search.js`: searches the local copy of your cards. Test it with `node --test Tests/QuickActions/lookup-search.test.mjs`.
 ```
 
 Add a section before "Quick Actions":
@@ -1458,7 +1458,7 @@ swift test --scratch-path ~/Library/Caches/Amadare/build
 ```
 
 ```bash
-node --test Tests/QuickActions/
+node --test Tests/QuickActions/lookup-search.test.mjs
 ```
 
 Expected: everything passes. Also run `git grep -nE 'ts\.net|100\.[0-9]+\.[0-9]+\.' -- . ':!Tests'`: the only `ts.net` matches should be placeholders (`<tailnet>`, `your-tailnet`, `example`), and there should be no real addresses.

@@ -69,12 +69,17 @@
 __FURIGANA_JS__
 </script>
 <script>
+__SEARCH_JS__
+</script>
+<script>
 const INITIAL = __INITIAL__;
 const KEY = __ANKI_KEY__;
 const ANKI_URL = __ANKI_URL__;
 const REMOTE = __ANKI_REMOTE__;
 const HINTS = '↑↓ to move · ⌘E edits' + (REMOTE ? '' : ' · ⌘O opens in Anki') + ' · Esc closes';
 const MAX = 1000;
+const CACHE = __CACHE__;
+let snapshot = CACHE ? CACHE.notes : null, savedAt = CACHE ? CACHE.savedAt : null, offline = false;
 const $q = document.getElementById('q'), $list = document.getElementById('list'),
       $detail = document.getElementById('detail'), $status = document.getElementById('status');
 let results = [], sel = -1, seq = 0;
@@ -115,13 +120,38 @@ function fieldsInOrder(note) {
   return Object.entries(note.fields).sort((a, b) => a[1].order - b[1].order).map(([k, v]) => [k, v.value]);
 }
 
-async function search() {
+// Stripping a field's HTML means parsing it, so keep the result between keystrokes.
+const textsByNote = new WeakMap();
+function fieldTexts(note) {
+  if (!textsByNote.has(note)) textsByNote.set(note, Object.values(note.fields).map(f => plain(f.value).toLowerCase()));
+  return textsByNote.get(note);
+}
+
+function saveSnapshot() {
+  savedAt = Date.now();
+  window.webkit.messageHandlers.lookup.postMessage(JSON.stringify({ savedAt, notes: snapshot }));
+}
+
+function footer(count) {
+  const parts = [];
+  if (offline && savedAt) parts.push('Offline · cards from ' + new Date(savedAt).toLocaleDateString());
+  if (count !== undefined) parts.push(count + (count === 1 ? ' card' : ' cards'));
+  parts.push(HINTS);
+  $status.textContent = parts.join(' · ');
+}
+
+// No snapshot yet (the first run): ask Anki. An empty search lists every note, newest first (note ids are creation times).
+async function liveNotes(q) {
+  const found = await anki('findNotes', { query: q ? ankiTerm(q) : 'deck:*' });
+  const ids = (q ? found : found.sort((a, b) => b - a)).slice(0, MAX);
+  return ids.length ? anki('notesInfo', { notes: ids }) : [];
+}
+
+// keepId keeps that note selected when a background refresh re-runs the search.
+async function search(keepId) {
   const q = $q.value.trim(), my = ++seq;
   try {
-    // An empty search lists every note, newest first (note ids are creation times).
-    const found = await anki('findNotes', { query: q ? ankiTerm(q) : 'deck:*' });
-    const ids = (q ? found : found.sort((a, b) => b - a)).slice(0, MAX);
-    const notes = ids.length ? await anki('notesInfo', { notes: ids }) : [];
+    const notes = snapshot ? matchNotes(snapshot, q, fieldTexts) : await liveNotes(q);
     if (my !== seq) return;
     const lq = q.toLowerCase();
     results = notes.map(n => {
@@ -131,16 +161,32 @@ async function search() {
     });
     if (q) results.sort((a, b) => a.rank - b.rank || a.title.length - b.title.length);
     else results.sort((a, b) => b.note.noteId - a.note.noteId);
-    sel = results.length ? 0 : -1;
+    const total = results.length;
+    results = results.slice(0, MAX);
+    const kept = results.findIndex(r => r.note.noteId === keepId);
+    sel = kept >= 0 ? kept : results.length ? 0 : -1;
     render(q);
     if (!results.length) showEmpty(q ? 'No cards contain “' + esc(q) + '”.' : 'Your collection has no cards yet.');
     else showDetail();
-    $status.textContent = (q ? '' : 'All ') + results.length + (results.length === 1 ? ' card' : ' cards') +
-      (ids.length === MAX ? ' (first ' + MAX + ')' : '') + ' · ' + HINTS;
+    footer(total);
   } catch (e) {
     if (my !== seq) return;
     results = []; render(q);
     showEmpty(isNetworkError(e) ? UNREACHABLE : esc(e.message));
+  }
+}
+
+// Replaces the snapshot with what's in Anki now. Skips the re-render when nothing changed, and leaves an open editor alone.
+async function refresh() {
+  try {
+    const notes = await anki('notesInfo', { query: 'deck:*' });
+    offline = false;
+    if (snapshot && JSON.stringify(notes) === JSON.stringify(snapshot)) { footer(results.length); return; }
+    snapshot = notes;
+    saveSnapshot();
+    if (!editing) await search(results[sel] && results[sel].note.noteId);
+  } catch (e) {
+    if (isNetworkError(e)) { offline = true; footer(snapshot ? results.length : undefined); }
   }
 }
 
@@ -293,6 +339,10 @@ async function saveEdit() {
     const [n] = await anki('notesInfo', { notes: [r.note.noteId] });
     const f = fieldsInOrder(n);
     Object.assign(r, { note: n, fields: f, title: plain(f[0] ? f[0][1] : ''), sub: plain(f[1] ? f[1][1] : ''), savedMsg: 'Saved' });
+    if (snapshot) {
+      const i = snapshot.findIndex(s => s.noteId === n.noteId);
+      if (i >= 0) { snapshot[i] = n; saveSnapshot(); }
+    }
     endEdit();
     render($q.value.trim());
     select(sel);
@@ -309,7 +359,8 @@ function openInAnki() {
 }
 
 let timer;
-$q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(search, 120); });
+// The pause only exists to spare Anki, so searching the snapshot doesn't need it. Called with no arguments, so no keepId.
+$q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => search(), snapshot ? 0 : 120); });
 $list.addEventListener('mousedown', e => { const li = e.target.closest('li'); if (li) { e.preventDefault(); select(+li.dataset.i); } });
 $list.addEventListener('dblclick', openInAnki);
 document.addEventListener('keydown', e => {
@@ -326,11 +377,12 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'o' && e.metaKey) { openInAnki(); e.preventDefault(); }
 });
 
-$status.textContent = HINTS;
 $q.value = INITIAL;
 $q.focus();
 $q.select();
+footer();
 search();
+refresh();
 </script>
 </body>
 </html>

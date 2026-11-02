@@ -7,6 +7,21 @@ ObjC.import('Cocoa');
 ObjC.import('WebKit');
 
 const DIR = $.getenv('HOME') + '/Library/Application Support/AnkiQuickAdd';
+const CACHE = DIR + '/notes-cache.json';
+
+// Written atomically, readable only by you: it holds your card text.
+function saveCache(json) {
+  $(json).writeToFileAtomicallyEncodingError(CACHE, true, $.NSUTF8StringEncoding, null);
+  $.NSFileManager.defaultManager.setAttributesOfItemAtPathError(
+    $.NSDictionary.dictionaryWithObjectForKey($.NSNumber.numberWithShort(0o600), $.NSFilePosixPermissions), CACHE, null);
+}
+
+function loadCache() {
+  try {
+    const cache = JSON.parse($.NSString.stringWithContentsOfFileEncodingError(CACHE, $.NSUTF8StringEncoding, null).js);
+    return Array.isArray(cache.notes) ? cache : null;
+  } catch (e) { return null; }
+}
 
 function run() {
   let query = '';
@@ -34,10 +49,14 @@ function run() {
       // No protocols list: JXA can't look up WKScriptMessageHandler, and AppKit/WebKit only check for the methods.
       protocols: [],
       methods: {
-        // The page posts 'close' on Esc.
+        // The page posts 'close' on Esc, and the snapshot's JSON whenever it changes.
         'userContentController:didReceiveScriptMessage:': {
           types: ['void', ['id', 'id']],
-          implementation: function (controller, message) { if (ObjC.unwrap(message.body) === 'close') win.performClose(null); }
+          implementation: function (controller, message) {
+            const body = ObjC.unwrap(message.body);
+            if (body === 'close') win.performClose(null);
+            else saveCache(body);
+          }
         },
         'windowWillClose:': {
           types: ['void', ['id']],
@@ -75,7 +94,9 @@ function run() {
     .replace('__FURIGANA_JS__', () => furiganaJs)
     .replace('__ANKI_KEY__', () => JSON.stringify(connection.key))
     .replace('__ANKI_URL__', () => JSON.stringify(connection.url))
-    .replace('__ANKI_REMOTE__', () => JSON.stringify(connection.remote));
+    .replace('__ANKI_REMOTE__', () => JSON.stringify(connection.remote))
+    .replace('__SEARCH_JS__', () => read('lookup-search.js'))
+    .replace('__CACHE__', () => JSON.stringify(loadCache()).replace(/</g, '\\u003c'));
   web.loadHTMLStringBaseURL(html, $.NSURL.URLWithString('http://localhost/'));
 
   win.center;
